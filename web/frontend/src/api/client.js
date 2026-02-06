@@ -31,6 +31,7 @@ const ensureClient = () => {
 // ============ Ingredients ============
 
 export const getIngredients = async (params = {}) => {
+    ensureClient();
     let query = supabase.from('ingredients').select('*');
 
     if (params.category) {
@@ -216,6 +217,7 @@ export const deleteRecipe = async (id) => {
 // ============ Production Batches ============
 
 export const getBatches = async (params = {}) => {
+    ensureClient();
     let query = supabase
         .from('production_batches')
         .select(`
@@ -506,6 +508,7 @@ export const deleteCustomer = async (id) => {
 // ============ Sales Orders ============
 
 export const getSalesOrders = async () => {
+    ensureClient();
     const { data, error } = await supabase
         .from('sales_orders')
         .select(`
@@ -609,6 +612,7 @@ export const deleteExpense = async (id) => {
 // ============ Dashboard Stats ============
 
 export const getDashboardStats = async () => {
+    ensureClient();
     // Get counts from each table
     const [
         { count: ingredientCount },
