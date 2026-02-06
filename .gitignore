@@ -1,0 +1,53 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+
+# Virtual environment
+venv/
+.venv/
+env/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Database
+*.db
+
+# PyInstaller
+*.spec
+
+# Logs
+*.log
+# Backups
+*.bak
+# Environment files (contain secrets!)
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Agent Artifacts
+.gemini/
+.agent/
+
+# Build output
+web/frontend/dist/
