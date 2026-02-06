@@ -12,9 +12,21 @@ import { supabase } from '../lib/supabase';
  * Handle Supabase errors consistently
  */
 function handleError(error, operation) {
+    if (!supabase) {
+        throw new Error('Supabase client not initialized. Please check your environment variables (VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY).');
+    }
     console.error(`Supabase ${operation} error:`, error);
     throw new Error(error.message || `Failed to ${operation}`);
 }
+
+/**
+ * Ensure supabase is initialized before making a call
+ */
+const ensureClient = () => {
+    if (!supabase) {
+        throw new Error('Supabase client not initialized. Please check your environment variables in Vercel settings.');
+    }
+};
 
 // ============ Ingredients ============
 
