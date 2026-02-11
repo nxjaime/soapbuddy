@@ -1,0 +1,722 @@
+[
+    {
+        "name": "Coconut Oil, 92 deg",
+        "sap_koh": 0.257,
+        "sap_naoh": 0.183,
+        "qualities": {
+            "hardness": 79,
+            "cleansing": 67,
+            "conditioning": 10,
+            "bubbly": 67,
+            "creamy": 12,
+            "iodine": 3,
+            "ins": 258
+        },
+        "fatty_acids": {
+            "lauric": 48,
+            "myristic": 19,
+            "palmitic": 9,
+            "stearic": 3,
+            "ricinoleic": 0,
+            "oleic": 8,
+            "linoleic": 2,
+            "linolenic": 0
+        }
+    },
+    {
+        "name": "Coconut Oil, fractionated",
+        "sap_koh": 0.325,
+        "sap_naoh": 0.232,
+        "qualities": {
+            "hardness": 100,
+            "cleansing": 100,
+            "conditioning": 0,
+            "bubbly": 100,
+            "creamy": 0,
+            "iodine": 1,
+            "ins": 324
+        },
+        "fatty_acids": {
+            "lauric": 2,
+            "myristic": 1,
+            "palmitic": 0,
+            "stearic": 0,
+            "ricinoleic": 0,
+            "oleic": 0,
+            "linoleic": 0,
+            "linolenic": 0
+        }
+    },
+    {
+        "name": "Coffee Bean Oil, green",
+        "sap_koh": 0.185,
+        "sap_naoh": 0.132,
+        "qualities": {
+            "hardness": 46,
+            "cleansing": 0,
+            "conditioning": 50,
+            "bubbly": 0,
+            "creamy": 46,
+            "iodine": 85,
+            "ins": 100
+        },
+        "fatty_acids": {
+            "lauric": 0,
+            "myristic": 0,
+            "palmitic": 38,
+            "stearic": 8,
+            "ricinoleic": 0,
+            "oleic": 9,
+            "linoleic": 39,
+            "linolenic": 2
+        }
+    },
+    {
+        "name": "Coffee Bean Oil, roasted",
+        "sap_koh": 0.18,
+        "sap_naoh": 0.128,
+        "qualities": {
+            "hardness": 40,
+            "cleansing": 0,
+            "conditioning": 48,
+            "bubbly": 0,
+            "creamy": 40,
+            "iodine": 87,
+            "ins": 93
+        },
+        "fatty_acids": {
+            "lauric": 0,
+            "myristic": 0,
+            "palmitic": 40,
+            "stearic": 0,
+            "ricinoleic": 0,
+            "oleic": 8,
+            "linoleic": 38,
+            "linolenic": 2
+        }
+    },
+    {
+        "name": "Cohune Oil",
+        "sap_koh": 0.205,
+        "sap_naoh": 0.146,
+        "qualities": {
+            "hardness": 75,
+            "cleansing": 64,
+            "conditioning": 21,
+            "bubbly": 64,
+            "creamy": 11,
+            "iodine": 30,
+            "ins": 175
+        },
+        "fatty_acids": {
+            "lauric": 51,
+            "myristic": 13,
+            "palmitic": 8,
+            "stearic": 3,
+            "ricinoleic": 0,
+            "oleic": 18,
+            "linoleic": 3,
+            "linolenic": 0
+        }
+    },
+    {
+        "name": "Corn Oil",
+        "sap_koh": 0.192,
+        "sap_naoh": 0.137,
+        "qualities": {
+            "hardness": 14,
+            "cleansing": 0,
+            "conditioning": 84,
+            "bubbly": 0,
+            "creamy": 14,
+            "iodine": 117,
+            "ins": 69
+        },
+        "fatty_acids": {
+            "lauric": 0,
+            "myristic": 0,
+            "palmitic": 12,
+            "stearic": 2,
+            "ricinoleic": 0,
+            "oleic": 32,
+            "linoleic": 51,
+            "linolenic": 1
+        }
+    },
+    {
+        "name": "Cottonseed Oil",
+        "sap_koh": 0.194,
+        "sap_naoh": 0.138,
+        "qualities": {
+            "hardness": 26,
+            "cleansing": 0,
+            "conditioning": 71,
+            "bubbly": 0,
+            "creamy": 26,
+            "iodine": 108,
+            "ins": 89
+        },
+        "fatty_acids": {
+            "lauric": 0,
+            "myristic": 0,
+            "palmitic": 13,
+            "stearic": 13,
+            "ricinoleic": 0,
+            "oleic": 18,
+            "linoleic": 52,
+            "linolenic": 1
+        }
+    },
+    {
+        "name": "Cranberry Seed Oil",
+        "sap_koh": 0.19,
+        "sap_naoh": 0.135,
+        "qualities": {
+            "hardness": 8,
+            "cleansing": 0,
+            "conditioning": 92,
+            "bubbly": 0,
+            "creamy": 8,
+            "iodine": 150,
+            "ins": 40
+        },
+        "fatty_acids": {
+            "lauric": 0,
+            "myristic": 0,
+            "palmitic": 6,
+            "stearic": 2,
+            "ricinoleic": 0,
+            "oleic": 23,
+            "linoleic": 37,
+            "linolenic": 32
+        }
+    },
+    {
+        "name": "Crisco, new w/palm",
+        "sap_koh": 0.193,
+        "sap_naoh": 0.138,
+        "qualities": {
+            "hardness": 25,
+            "cleansing": 0,
+            "conditioning": 74,
+            "bubbly": 0,
+            "creamy": 25,
+            "iodine": 111,
+            "ins": 82
+        },
+        "fatty_acids": {
+            "lauric": 0,
+            "myristic": 0,
+            "palmitic": 20,
+            "stearic": 5,
+            "ricinoleic": 0,
+            "oleic": 28,
+            "linoleic": 40,
+            "linolenic": 6
+        }
+    },
+    {
+        "name": "Crisco, old",
+        "sap_koh": 0.192,
+        "sap_naoh": 0.137,
+        "qualities": {
+            "hardness": 26,
+            "cleansing": 0,
+            "conditioning": 70,
+            "bubbly": 0,
+            "creamy": 26,
+            "iodine": 93,
+            "ins": 115
+        },
+        "fatty_acids": {
+            "lauric": 0,
+            "myristic": 0,
+            "palmitic": 13,
+            "stearic": 13,
+            "ricinoleic": 0,
+            "oleic": 18,
+            "linoleic": 52,
+            "linolenic": 0
+        }
+    },
+    {
+        "name": "Cupuacu Butter",
+        "sap_koh": 0.192,
+        "sap_naoh": 0.137,
+        "qualities": {
+            "hardness": 54,
+            "cleansing": 0,
+            "conditioning": 44,
+            "bubbly": 0,
+            "creamy": 43,
+            "iodine": 39,
+            "ins": 153
+        },
+        "fatty_acids": {
+            "lauric": 0,
+            "myristic": 0,
+            "palmitic": 8,
+            "stearic": 35,
+            "ricinoleic": 0,
+            "oleic": 42,
+            "linoleic": 2,
+            "linolenic": 0
+        }
+    },
+    {
+        "name": "Duck Fat, flesh and skin",
+        "sap_koh": 0.194,
+        "sap_naoh": 0.138,
+        "qualities": {
+            "hardness": 36,
+            "cleansing": 1,
+            "conditioning": 58,
+            "bubbly": 1,
+            "creamy": 35,
+            "iodine": 72,
+            "ins": 122
+        },
+        "fatty_acids": {
+            "lauric": 0,
+            "myristic": 1,
+            "palmitic": 26,
+            "stearic": 9,
+            "ricinoleic": 0,
+            "oleic": 44,
+            "linoleic": 13,
+            "linolenic": 1
+        }
+    },
+    {
+        "name": "Emu Oil",
+        "sap_koh": 0.19,
+        "sap_naoh": 0.135,
+        "qualities": {
+            "hardness": 32,
+            "cleansing": 0,
+            "conditioning": 55,
+            "bubbly": 0,
+            "creamy": 32,
+            "iodine": 60,
+            "ins": 128
+        },
+        "fatty_acids": {
+            "lauric": 0,
+            "myristic": 0,
+            "palmitic": 23,
+            "stearic": 9,
+            "ricinoleic": 0,
+            "oleic": 47,
+            "linoleic": 8,
+            "linolenic": 0
+        }
+    },
+    {
+        "name": "Evening Primrose Oil",
+        "sap_koh": 0.19,
+        "sap_naoh": 0.135,
+        "qualities": {
+            "hardness": 0,
+            "cleansing": 0,
+            "conditioning": 89,
+            "bubbly": 0,
+            "creamy": 0,
+            "iodine": 160,
+            "ins": 30
+        },
+        "fatty_acids": {
+            "lauric": 0,
+            "myristic": 0,
+            "palmitic": 0,
+            "stearic": 0,
+            "ricinoleic": 0,
+            "oleic": 0,
+            "linoleic": 80,
+            "linolenic": 9
+        }
+    },
+    {
+        "name": "Flax Oil, linseed",
+        "sap_koh": 0.19,
+        "sap_naoh": 0.135,
+        "qualities": {
+            "hardness": 9,
+            "cleansing": 0,
+            "conditioning": 90,
+            "bubbly": 0,
+            "creamy": 9,
+            "iodine": 180,
+            "ins": -6
+        },
+        "fatty_acids": {
+            "lauric": 0,
+            "myristic": 0,
+            "palmitic": 6,
+            "stearic": 3,
+            "ricinoleic": 0,
+            "oleic": 27,
+            "linoleic": 13,
+            "linolenic": 50
+        }
+    },
+    {
+        "name": "Ghee, any bovine",
+        "sap_koh": 0.227,
+        "sap_naoh": 0.162,
+        "qualities": {
+            "hardness": 55,
+            "cleansing": 15,
+            "conditioning": 22,
+            "bubbly": 15,
+            "creamy": 40,
+            "iodine": 30,
+            "ins": 191
+        },
+        "fatty_acids": {
+            "lauric": 4,
+            "myristic": 11,
+            "palmitic": 28,
+            "stearic": 12,
+            "ricinoleic": 0,
+            "oleic": 19,
+            "linoleic": 2,
+            "linolenic": 1
+        }
+    },
+    {
+        "name": "Goose Fat",
+        "sap_koh": 0.192,
+        "sap_naoh": 0.137,
+        "qualities": {
+            "hardness": 27,
+            "cleansing": 0,
+            "conditioning": 64,
+            "bubbly": 0,
+            "creamy": 27,
+            "iodine": 65,
+            "ins": 130
+        },
+        "fatty_acids": {
+            "lauric": 0,
+            "myristic": 0,
+            "palmitic": 21,
+            "stearic": 6,
+            "ricinoleic": 0,
+            "oleic": 54,
+            "linoleic": 10,
+            "linolenic": 0
+        }
+    },
+    {
+        "name": "Grapeseed Oil",
+        "sap_koh": 0.181,
+        "sap_naoh": 0.129,
+        "qualities": {
+            "hardness": 12,
+            "cleansing": 0,
+            "conditioning": 88,
+            "bubbly": 0,
+            "creamy": 12,
+            "iodine": 131,
+            "ins": 66
+        },
+        "fatty_acids": {
+            "lauric": 0,
+            "myristic": 0,
+            "palmitic": 8,
+            "stearic": 4,
+            "ricinoleic": 0,
+            "oleic": 20,
+            "linoleic": 68,
+            "linolenic": 0
+        }
+    },
+    {
+        "name": "Hazelnut Oil",
+        "sap_koh": 0.195,
+        "sap_naoh": 0.139,
+        "qualities": {
+            "hardness": 8,
+            "cleansing": 0,
+            "conditioning": 85,
+            "bubbly": 0,
+            "creamy": 8,
+            "iodine": 97,
+            "ins": 94
+        },
+        "fatty_acids": {
+            "lauric": 0,
+            "myristic": 0,
+            "palmitic": 5,
+            "stearic": 3,
+            "ricinoleic": 0,
+            "oleic": 75,
+            "linoleic": 10,
+            "linolenic": 0
+        }
+    },
+    {
+        "name": "Hemp Oil",
+        "sap_koh": 0.193,
+        "sap_naoh": 0.138,
+        "qualities": {
+            "hardness": 8,
+            "cleansing": 0,
+            "conditioning": 90,
+            "bubbly": 0,
+            "creamy": 8,
+            "iodine": 165,
+            "ins": 39
+        },
+        "fatty_acids": {
+            "lauric": 0,
+            "myristic": 0,
+            "palmitic": 6,
+            "stearic": 2,
+            "ricinoleic": 0,
+            "oleic": 12,
+            "linoleic": 57,
+            "linolenic": 21
+        }
+    },
+    {
+        "name": "Horse Oil",
+        "sap_koh": 0.196,
+        "sap_naoh": 0.14,
+        "qualities": {
+            "hardness": 34,
+            "cleansing": 3,
+            "conditioning": 49,
+            "bubbly": 3,
+            "creamy": 31,
+            "iodine": 79,
+            "ins": 117
+        },
+        "fatty_acids": {
+            "lauric": 0,
+            "myristic": 3,
+            "palmitic": 26,
+            "stearic": 5,
+            "ricinoleic": 0,
+            "oleic": 10,
+            "linoleic": 20,
+            "linolenic": 19
+        }
+    },
+    {
+        "name": "Illipe Butter",
+        "sap_koh": 0.185,
+        "sap_naoh": 0.132,
+        "qualities": {
+            "hardness": 62,
+            "cleansing": 0,
+            "conditioning": 35,
+            "bubbly": 0,
+            "creamy": 62,
+            "iodine": 33,
+            "ins": 152
+        },
+        "fatty_acids": {
+            "lauric": 0,
+            "myristic": 0,
+            "palmitic": 17,
+            "stearic": 45,
+            "ricinoleic": 0,
+            "oleic": 35,
+            "linoleic": 0,
+            "linolenic": 0
+        }
+    },
+    {
+        "name": "Japan Wax",
+        "sap_koh": 0.215,
+        "sap_naoh": 0.153,
+        "qualities": {
+            "hardness": 88,
+            "cleansing": 1,
+            "conditioning": 4,
+            "bubbly": 1,
+            "creamy": 87,
+            "iodine": 11,
+            "ins": 204
+        },
+        "fatty_acids": {
+            "lauric": 0,
+            "myristic": 1,
+            "palmitic": 80,
+            "stearic": 7,
+            "ricinoleic": 0,
+            "oleic": 4,
+            "linoleic": 0,
+            "linolenic": 0
+        }
+    },
+    {
+        "name": "Jatropha Oil, soapnut seed oil",
+        "sap_koh": 0.193,
+        "sap_naoh": 0.138,
+        "qualities": {
+            "hardness": 16,
+            "cleansing": 0,
+            "conditioning": 78,
+            "bubbly": 0,
+            "creamy": 16,
+            "iodine": 102,
+            "ins": 91
+        },
+        "fatty_acids": {
+            "lauric": 0,
+            "myristic": 0,
+            "palmitic": 9,
+            "stearic": 7,
+            "ricinoleic": 0,
+            "oleic": 44,
+            "linoleic": 34,
+            "linolenic": 0
+        }
+    },
+    {
+        "name": "Jojoba Oil (a Liquid Wax Ester)",
+        "sap_koh": 0.092,
+        "sap_naoh": 0.066,
+        "qualities": {
+            "hardness": 0,
+            "cleansing": 0,
+            "conditioning": 12,
+            "bubbly": 0,
+            "creamy": 0,
+            "iodine": 83,
+            "ins": 11
+        },
+        "fatty_acids": {
+            "lauric": 0,
+            "myristic": 0,
+            "palmitic": 0,
+            "stearic": 0,
+            "ricinoleic": 0,
+            "oleic": 12,
+            "linoleic": 0,
+            "linolenic": 0
+        }
+    },
+    {
+        "name": "Karanja Oil",
+        "sap_koh": 0.183,
+        "sap_naoh": 0.13,
+        "qualities": {
+            "hardness": 12,
+            "cleansing": 0,
+            "conditioning": 73,
+            "bubbly": 0,
+            "creamy": 12,
+            "iodine": 85,
+            "ins": 98
+        },
+        "fatty_acids": {
+            "lauric": 0,
+            "myristic": 0,
+            "palmitic": 6,
+            "stearic": 6,
+            "ricinoleic": 0,
+            "oleic": 58,
+            "linoleic": 15,
+            "linolenic": 0
+        }
+    },
+    {
+        "name": "Kokum Butter",
+        "sap_koh": 0.19,
+        "sap_naoh": 0.135,
+        "qualities": {
+            "hardness": 60,
+            "cleansing": 0,
+            "conditioning": 37,
+            "bubbly": 0,
+            "creamy": 60,
+            "iodine": 35,
+            "ins": 155
+        },
+        "fatty_acids": {
+            "lauric": 0,
+            "myristic": 0,
+            "palmitic": 4,
+            "stearic": 56,
+            "ricinoleic": 0,
+            "oleic": 36,
+            "linoleic": 1,
+            "linolenic": 0
+        }
+    },
+    {
+        "name": "Kpangnan Butter",
+        "sap_koh": 0.191,
+        "sap_naoh": 0.136,
+        "qualities": {
+            "hardness": 50,
+            "cleansing": 0,
+            "conditioning": 50,
+            "bubbly": 0,
+            "creamy": 50,
+            "iodine": 42,
+            "ins": 149
+        },
+        "fatty_acids": {
+            "lauric": 0,
+            "myristic": 0,
+            "palmitic": 6,
+            "stearic": 44,
+            "ricinoleic": 0,
+            "oleic": 49,
+            "linoleic": 1,
+            "linolenic": 0
+        }
+    },
+    {
+        "name": "Kukui nut Oil",
+        "sap_koh": 0.189,
+        "sap_naoh": 0.135,
+        "qualities": {
+            "hardness": 8,
+            "cleansing": 0,
+            "conditioning": 91,
+            "bubbly": 0,
+            "creamy": 8,
+            "iodine": 168,
+            "ins": 24
+        },
+        "fatty_acids": {
+            "lauric": 0,
+            "myristic": 0,
+            "palmitic": 6,
+            "stearic": 2,
+            "ricinoleic": 0,
+            "oleic": 20,
+            "linoleic": 42,
+            "linolenic": 29
+        }
+    },
+    {
+        "name": "Lanolin liquid Wax",
+        "sap_koh": 0.106,
+        "sap_naoh": 0.076,
+        "qualities": {
+            "hardness": 0,
+            "cleansing": 0,
+            "conditioning": 0,
+            "bubbly": 0,
+            "creamy": 0,
+            "iodine": 27,
+            "ins": 83
+        },
+        "fatty_acids": {
+            "lauric": 0,
+            "myristic": 0,
+            "palmitic": 0,
+            "stearic": 0,
+            "ricinoleic": 0,
+            "oleic": 0,
+            "linoleic": 0,
+            "linolenic": 0
+        }
+    }
+]

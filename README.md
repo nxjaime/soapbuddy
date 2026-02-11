@@ -1,96 +1,64 @@
-# SoapManager
+# SoapBuddy (formerly SoapManager)
 
-A lightweight, cross-platform desktop application for soap making inventory management, recipe formulation, and cost tracking.
+A modern, serverless web application for soap making inventory management, recipe formulation, and production tracking.
+
+## 🚀 Migration Status: COMPLETE
+As of February 7, 2026, the application has transitioned from a Python Desktop/FastAPI app to a modern **Serverless Web Architecture**.
+
+- **Frontend**: React + Vite (deployed on Vercel)
+- **Backend/Database**: Supabase (PostgreSQL)
+- **Authentication**: Supabase Auth
+- **Business Logic**: Ported to client-side JS and PostgreSQL RPC functions.
+
+---
 
 ## Features
 
-- ✅ **Ingredients Inventory** - Track oils, butters, lye, additives, fragrances, and colorants
-- ✅ **Lye Calculator** - NaOH/KOH calculations with 20+ built-in SAP values
-- ✅ **Recipe Management** - Create, edit, clone, and scale recipes
-- ✅ **Cost Calculation** - Automatic per-batch cost tracking
-- 🔜 **Production Tracking** - Batch management with lot numbers
-- 🔜 **Reports** - Inventory reports, cost analysis, traceability
+- ✅ **Inventory Management** - Real-time tracking of ingredients and supply orders.
+- ✅ **Weighted Average Cost (WAC)** - Scientific cost tracking for ingredients across multiple purchases.
+- ✅ **Lye Calculator** - Integrated NaOH/KOH calculations.
+- ✅ **Production Tracking** - Manage batches from 'Planned' to 'Complete' with automatic inventory deduction.
+- ✅ **Security** - Row Level Security (RLS) ensuring data integrity and privacy.
 
 ## Tech Stack
 
-- **Language:** Python 3.10+
-- **UI Framework:** PySide6 (Qt6)
-- **Database:** SQLite + SQLAlchemy ORM
-- **Styling:** Custom QSS (Qt Style Sheets)
+- **Frontend**: React (Vite)
+- **Database**: Supabase (PostgreSQL)
+- **Styling**: CSS Modules / Tailwind
+- **Deployment**: Vercel
 
-## Installation
+## Getting Started
+
+### Prerequisites
+- Node.js (v18+)
+- Supabase Project
 
 ### Development Setup
 
-```bash
-# Clone the repository
-cd SoapManager
+1. **Navigate to the frontend directory**:
+   ```bash
+   cd web/frontend
+   ```
 
-# Create virtual environment
-python3 -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+2. **Install dependencies**:
+   ```bash
+   npm install
+   ```
 
-# Install dependencies
-pip install -r requirements.txt
+3. **Configure Environment Variables**:
+   Create a `.env` file in `web/frontend/` with your Supabase credentials:
+   ```env
+   VITE_SUPABASE_URL=your_project_url
+   VITE_SUPABASE_ANON_KEY=your_anon_key
+   ```
 
-# (Optional) Seed database with sample ingredients
-python scripts/seed_db.py
+4. **Run the app**:
+   ```bash
+   npm run dev
+   ```
 
-# Run the application
-python src/main.py
-```
-
-### System Requirements (Linux)
-
-On Debian/Ubuntu-based systems, you may need:
-
-```bash
-sudo apt install libxcb-cursor0
-```
-
-## Building Executables
-
-### Linux (.deb)
-
-```bash
-chmod +x scripts/build_linux.sh
-./scripts/build_linux.sh
-```
-
-The `.deb` package will be in `dist/`.
-
-### Windows (.exe)
-
-```cmd
-scripts\build_windows.bat
-```
-
-The `.exe` will be in `dist/`.
-
-## Project Structure
-
-```
-SoapManager/
-├── src/
-│   ├── database/         # DB connection and session
-│   ├── models/           # SQLAlchemy ORM models
-│   ├── views/            # PySide6 UI components
-│   ├── services/         # Business logic
-│   ├── resources/        # Styles, icons
-│   └── main.py           # Entry point
-├── scripts/              # Build and utility scripts
-├── tests/                # Unit tests
-└── requirements.txt
-```
-
-## Screenshots
-
-*(Coming soon)*
+## 🧹 Legacy Code
+The original Python source code and SQLite database have been archived in the `_legacy_2026-02-07T20:30:00/` directory to eliminate "Split-Brain" state and maintain clear project direction.
 
 ## License
-
-MIT License - Free for personal and commercial use.
-
-## Contributing
-
-Contributions welcome! Please open an issue first to discuss proposed changes.
+MIT License

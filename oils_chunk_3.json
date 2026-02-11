@@ -1,0 +1,722 @@
+[
+    {
+        "name": "Lard, Pig Tallow (Manteca)",
+        "sap_koh": 0.198,
+        "sap_naoh": 0.141,
+        "qualities": {
+            "hardness": 42,
+            "cleansing": 1,
+            "conditioning": 52,
+            "bubbly": 1,
+            "creamy": 41,
+            "iodine": 57,
+            "ins": 139
+        },
+        "fatty_acids": {
+            "lauric": 0,
+            "myristic": 1,
+            "palmitic": 28,
+            "stearic": 13,
+            "ricinoleic": 0,
+            "oleic": 46,
+            "linoleic": 6,
+            "linolenic": 0
+        }
+    },
+    {
+        "name": "Laurel Fruit Oil",
+        "sap_koh": 0.198,
+        "sap_naoh": 0.141,
+        "qualities": {
+            "hardness": 42,
+            "cleansing": 26,
+            "conditioning": 58,
+            "bubbly": 26,
+            "creamy": 16,
+            "iodine": 74,
+            "ins": 124
+        },
+        "fatty_acids": {
+            "lauric": 25,
+            "myristic": 1,
+            "palmitic": 15,
+            "stearic": 1,
+            "ricinoleic": 0,
+            "oleic": 31,
+            "linoleic": 26,
+            "linolenic": 1
+        }
+    },
+    {
+        "name": "Lauric Acid",
+        "sap_koh": 0.28,
+        "sap_naoh": 0.2,
+        "qualities": {
+            "hardness": 100,
+            "cleansing": 100,
+            "conditioning": 0,
+            "bubbly": 100,
+            "creamy": 0,
+            "iodine": 0,
+            "ins": 280
+        },
+        "fatty_acids": {
+            "lauric": 99,
+            "myristic": 1,
+            "palmitic": 0,
+            "stearic": 0,
+            "ricinoleic": 0,
+            "oleic": 0,
+            "linoleic": 0,
+            "linolenic": 0
+        }
+    },
+    {
+        "name": "Linseed Oil, flax",
+        "sap_koh": 0.19,
+        "sap_naoh": 0.135,
+        "qualities": {
+            "hardness": 9,
+            "cleansing": 0,
+            "conditioning": 90,
+            "bubbly": 0,
+            "creamy": 9,
+            "iodine": 180,
+            "ins": -6
+        },
+        "fatty_acids": {
+            "lauric": 0,
+            "myristic": 0,
+            "palmitic": 6,
+            "stearic": 3,
+            "ricinoleic": 0,
+            "oleic": 27,
+            "linoleic": 13,
+            "linolenic": 50
+        }
+    },
+    {
+        "name": "Loofa Seed Oil, Luffa cylinderica",
+        "sap_koh": 0.187,
+        "sap_naoh": 0.133,
+        "qualities": {
+            "hardness": 27,
+            "cleansing": 0,
+            "conditioning": 77,
+            "bubbly": 0,
+            "creamy": 27,
+            "iodine": 108,
+            "ins": 79
+        },
+        "fatty_acids": {
+            "lauric": 0,
+            "myristic": 0,
+            "palmitic": 9,
+            "stearic": 18,
+            "ricinoleic": 0,
+            "oleic": 30,
+            "linoleic": 47,
+            "linolenic": 0
+        }
+    },
+    {
+        "name": "Macadamia Nut Butter",
+        "sap_koh": 0.188,
+        "sap_naoh": 0.134,
+        "qualities": {
+            "hardness": 19,
+            "cleansing": 1,
+            "conditioning": 60,
+            "bubbly": 1,
+            "creamy": 18,
+            "iodine": 70,
+            "ins": 118
+        },
+        "fatty_acids": {
+            "lauric": 0,
+            "myristic": 1,
+            "palmitic": 6,
+            "stearic": 12,
+            "ricinoleic": 0,
+            "oleic": 56,
+            "linoleic": 3,
+            "linolenic": 1
+        }
+    },
+    {
+        "name": "Macadamia Nut Oil",
+        "sap_koh": 0.195,
+        "sap_naoh": 0.139,
+        "qualities": {
+            "hardness": 14,
+            "cleansing": 0,
+            "conditioning": 61,
+            "bubbly": 0,
+            "creamy": 14,
+            "iodine": 76,
+            "ins": 119
+        },
+        "fatty_acids": {
+            "lauric": 0,
+            "myristic": 0,
+            "palmitic": 9,
+            "stearic": 5,
+            "ricinoleic": 0,
+            "oleic": 59,
+            "linoleic": 2,
+            "linolenic": 0
+        }
+    },
+    {
+        "name": "Mafura Butter, Trichilia emetica ",
+        "sap_koh": 0.198,
+        "sap_naoh": 0.141,
+        "qualities": {
+            "hardness": 41,
+            "cleansing": 1,
+            "conditioning": 61,
+            "bubbly": 1,
+            "creamy": 40,
+            "iodine": 66,
+            "ins": 132
+        },
+        "fatty_acids": {
+            "lauric": 0,
+            "myristic": 1,
+            "palmitic": 37,
+            "stearic": 3,
+            "ricinoleic": 0,
+            "oleic": 49,
+            "linoleic": 11,
+            "linolenic": 1
+        }
+    },
+    {
+        "name": "Mango Seed Butter",
+        "sap_koh": 0.191,
+        "sap_naoh": 0.136,
+        "qualities": {
+            "hardness": 49,
+            "cleansing": 0,
+            "conditioning": 48,
+            "bubbly": 0,
+            "creamy": 49,
+            "iodine": 45,
+            "ins": 146
+        },
+        "fatty_acids": {
+            "lauric": 0,
+            "myristic": 0,
+            "palmitic": 7,
+            "stearic": 42,
+            "ricinoleic": 0,
+            "oleic": 45,
+            "linoleic": 3,
+            "linolenic": 0
+        }
+    },
+    {
+        "name": "Mango Seed Oil",
+        "sap_koh": 0.19,
+        "sap_naoh": 0.135,
+        "qualities": {
+            "hardness": 35,
+            "cleansing": 0,
+            "conditioning": 61,
+            "bubbly": 0,
+            "creamy": 35,
+            "iodine": 60,
+            "ins": 130
+        },
+        "fatty_acids": {
+            "lauric": 0,
+            "myristic": 0,
+            "palmitic": 8,
+            "stearic": 27,
+            "ricinoleic": 0,
+            "oleic": 52,
+            "linoleic": 8,
+            "linolenic": 1
+        }
+    },
+    {
+        "name": "Marula Oil",
+        "sap_koh": 0.192,
+        "sap_naoh": 0.137,
+        "qualities": {
+            "hardness": 18,
+            "cleansing": 0,
+            "conditioning": 79,
+            "bubbly": 0,
+            "creamy": 18,
+            "iodine": 73,
+            "ins": 119
+        },
+        "fatty_acids": {
+            "lauric": 0,
+            "myristic": 0,
+            "palmitic": 11,
+            "stearic": 7,
+            "ricinoleic": 0,
+            "oleic": 75,
+            "linoleic": 4,
+            "linolenic": 0
+        }
+    },
+    {
+        "name": "Meadowfoam Oil",
+        "sap_koh": 0.169,
+        "sap_naoh": 0.12,
+        "qualities": {
+            "hardness": 2,
+            "cleansing": 0,
+            "conditioning": 98,
+            "bubbly": 0,
+            "creamy": 2,
+            "iodine": 92,
+            "ins": 77
+        },
+        "fatty_acids": {
+            "lauric": 0,
+            "myristic": 0,
+            "palmitic": 0,
+            "stearic": 0,
+            "ricinoleic": 0,
+            "oleic": 0,
+            "linoleic": 0,
+            "linolenic": 0
+        }
+    },
+    {
+        "name": "Milk Fat, any bovine",
+        "sap_koh": 0.227,
+        "sap_naoh": 0.162,
+        "qualities": {
+            "hardness": 55,
+            "cleansing": 15,
+            "conditioning": 22,
+            "bubbly": 15,
+            "creamy": 40,
+            "iodine": 30,
+            "ins": 191
+        },
+        "fatty_acids": {
+            "lauric": 4,
+            "myristic": 11,
+            "palmitic": 28,
+            "stearic": 12,
+            "ricinoleic": 0,
+            "oleic": 19,
+            "linoleic": 2,
+            "linolenic": 1
+        }
+    },
+    {
+        "name": "Milk Thistle Oil",
+        "sap_koh": 0.196,
+        "sap_naoh": 0.14,
+        "qualities": {
+            "hardness": 9,
+            "cleansing": 0,
+            "conditioning": 90,
+            "bubbly": 0,
+            "creamy": 9,
+            "iodine": 115,
+            "ins": 81
+        },
+        "fatty_acids": {
+            "lauric": 0,
+            "myristic": 0,
+            "palmitic": 7,
+            "stearic": 2,
+            "ricinoleic": 0,
+            "oleic": 26,
+            "linoleic": 64,
+            "linolenic": 0
+        }
+    },
+    {
+        "name": "Mink Oil",
+        "sap_koh": 0.196,
+        "sap_naoh": 0.14,
+        "qualities": {
+            "hardness": 0,
+            "cleansing": 0,
+            "conditioning": 0,
+            "bubbly": 0,
+            "creamy": 0,
+            "iodine": 55,
+            "ins": 141
+        },
+        "fatty_acids": {
+            "lauric": 0,
+            "myristic": 0,
+            "palmitic": 0,
+            "stearic": 0,
+            "ricinoleic": 0,
+            "oleic": 0,
+            "linoleic": 0,
+            "linolenic": 0
+        }
+    },
+    {
+        "name": "Monoi de Tahiti Oil",
+        "sap_koh": 0.255,
+        "sap_naoh": 0.182,
+        "qualities": {
+            "hardness": 73,
+            "cleansing": 60,
+            "conditioning": 2,
+            "bubbly": 60,
+            "creamy": 13,
+            "iodine": 9,
+            "ins": 246
+        },
+        "fatty_acids": {
+            "lauric": 44,
+            "myristic": 16,
+            "palmitic": 10,
+            "stearic": 3,
+            "ricinoleic": 0,
+            "oleic": 0,
+            "linoleic": 2,
+            "linolenic": 0
+        }
+    },
+    {
+        "name": "Moringa Oil",
+        "sap_koh": 0.192,
+        "sap_naoh": 0.137,
+        "qualities": {
+            "hardness": 14,
+            "cleansing": 0,
+            "conditioning": 73,
+            "bubbly": 0,
+            "creamy": 14,
+            "iodine": 68,
+            "ins": 124
+        },
+        "fatty_acids": {
+            "lauric": 0,
+            "myristic": 0,
+            "palmitic": 7,
+            "stearic": 7,
+            "ricinoleic": 0,
+            "oleic": 71,
+            "linoleic": 2,
+            "linolenic": 0
+        }
+    },
+    {
+        "name": "Mowrah Butter",
+        "sap_koh": 0.194,
+        "sap_naoh": 0.138,
+        "qualities": {
+            "hardness": 46,
+            "cleansing": 0,
+            "conditioning": 51,
+            "bubbly": 0,
+            "creamy": 46,
+            "iodine": 62,
+            "ins": 132
+        },
+        "fatty_acids": {
+            "lauric": 0,
+            "myristic": 0,
+            "palmitic": 24,
+            "stearic": 22,
+            "ricinoleic": 0,
+            "oleic": 36,
+            "linoleic": 15,
+            "linolenic": 0
+        }
+    },
+    {
+        "name": "Murumuru Butter",
+        "sap_koh": 0.275,
+        "sap_naoh": 0.196,
+        "qualities": {
+            "hardness": 82,
+            "cleansing": 73,
+            "conditioning": 18,
+            "bubbly": 73,
+            "creamy": 9,
+            "iodine": 25,
+            "ins": 250
+        },
+        "fatty_acids": {
+            "lauric": 47,
+            "myristic": 26,
+            "palmitic": 6,
+            "stearic": 3,
+            "ricinoleic": 0,
+            "oleic": 15,
+            "linoleic": 3,
+            "linolenic": 0
+        }
+    },
+    {
+        "name": "Mustard Oil, kachi ghani",
+        "sap_koh": 0.173,
+        "sap_naoh": 0.123,
+        "qualities": {
+            "hardness": 4,
+            "cleansing": 0,
+            "conditioning": 41,
+            "bubbly": 0,
+            "creamy": 4,
+            "iodine": 101,
+            "ins": 72
+        },
+        "fatty_acids": {
+            "lauric": 0,
+            "myristic": 0,
+            "palmitic": 2,
+            "stearic": 2,
+            "ricinoleic": 0,
+            "oleic": 18,
+            "linoleic": 14,
+            "linolenic": 9
+        }
+    },
+    {
+        "name": "Myristic Acid",
+        "sap_koh": 0.247,
+        "sap_naoh": 0.176,
+        "qualities": {
+            "hardness": 99,
+            "cleansing": 99,
+            "conditioning": 0,
+            "bubbly": 99,
+            "creamy": 0,
+            "iodine": 1,
+            "ins": 246
+        },
+        "fatty_acids": {
+            "lauric": 0,
+            "myristic": 99,
+            "palmitic": 0,
+            "stearic": 0,
+            "ricinoleic": 0,
+            "oleic": 0,
+            "linoleic": 0,
+            "linolenic": 0
+        }
+    },
+    {
+        "name": "Neatsfoot Oil",
+        "sap_koh": 0.18,
+        "sap_naoh": 0.128,
+        "qualities": {
+            "hardness": 0,
+            "cleansing": 0,
+            "conditioning": 0,
+            "bubbly": 0,
+            "creamy": 0,
+            "iodine": 90,
+            "ins": 90
+        },
+        "fatty_acids": {
+            "lauric": 0,
+            "myristic": 0,
+            "palmitic": 0,
+            "stearic": 0,
+            "ricinoleic": 0,
+            "oleic": 0,
+            "linoleic": 0,
+            "linolenic": 0
+        }
+    },
+    {
+        "name": "Neem Seed Oil",
+        "sap_koh": 0.193,
+        "sap_naoh": 0.138,
+        "qualities": {
+            "hardness": 39,
+            "cleansing": 2,
+            "conditioning": 58,
+            "bubbly": 2,
+            "creamy": 37,
+            "iodine": 72,
+            "ins": 121
+        },
+        "fatty_acids": {
+            "lauric": 0,
+            "myristic": 2,
+            "palmitic": 21,
+            "stearic": 16,
+            "ricinoleic": 0,
+            "oleic": 46,
+            "linoleic": 12,
+            "linolenic": 0
+        }
+    },
+    {
+        "name": "Nutmeg Butter",
+        "sap_koh": 0.162,
+        "sap_naoh": 0.116,
+        "qualities": {
+            "hardness": 90,
+            "cleansing": 86,
+            "conditioning": 5,
+            "bubbly": 86,
+            "creamy": 4,
+            "iodine": 46,
+            "ins": 116
+        },
+        "fatty_acids": {
+            "lauric": 3,
+            "myristic": 83,
+            "palmitic": 4,
+            "stearic": 0,
+            "ricinoleic": 0,
+            "oleic": 5,
+            "linoleic": 0,
+            "linolenic": 0
+        }
+    },
+    {
+        "name": "Oat Oil",
+        "sap_koh": 0.19,
+        "sap_naoh": 0.135,
+        "qualities": {
+            "hardness": 17,
+            "cleansing": 0,
+            "conditioning": 79,
+            "bubbly": 0,
+            "creamy": 17,
+            "iodine": 104,
+            "ins": 86
+        },
+        "fatty_acids": {
+            "lauric": 0,
+            "myristic": 0,
+            "palmitic": 15,
+            "stearic": 2,
+            "ricinoleic": 0,
+            "oleic": 40,
+            "linoleic": 39,
+            "linolenic": 0
+        }
+    },
+    {
+        "name": "Oleic Acid",
+        "sap_koh": 0.202,
+        "sap_naoh": 0.144,
+        "qualities": {
+            "hardness": 0,
+            "cleansing": 0,
+            "conditioning": 99,
+            "bubbly": 0,
+            "creamy": 0,
+            "iodine": 92,
+            "ins": 110
+        },
+        "fatty_acids": {
+            "lauric": 0,
+            "myristic": 0,
+            "palmitic": 0,
+            "stearic": 0,
+            "ricinoleic": 0,
+            "oleic": 99,
+            "linoleic": 0,
+            "linolenic": 0
+        }
+    },
+    {
+        "name": "Olive Oil",
+        "sap_koh": 0.19,
+        "sap_naoh": 0.135,
+        "qualities": {
+            "hardness": 17,
+            "cleansing": 0,
+            "conditioning": 82,
+            "bubbly": 0,
+            "creamy": 17,
+            "iodine": 85,
+            "ins": 105
+        },
+        "fatty_acids": {
+            "lauric": 0,
+            "myristic": 0,
+            "palmitic": 14,
+            "stearic": 3,
+            "ricinoleic": 0,
+            "oleic": 69,
+            "linoleic": 12,
+            "linolenic": 1
+        }
+    },
+    {
+        "name": "Olive Oil pomace",
+        "sap_koh": 0.188,
+        "sap_naoh": 0.134,
+        "qualities": {
+            "hardness": 17,
+            "cleansing": 0,
+            "conditioning": 83,
+            "bubbly": 0,
+            "creamy": 17,
+            "iodine": 84,
+            "ins": 104
+        },
+        "fatty_acids": {
+            "lauric": 0,
+            "myristic": 0,
+            "palmitic": 14,
+            "stearic": 3,
+            "ricinoleic": 0,
+            "oleic": 69,
+            "linoleic": 12,
+            "linolenic": 2
+        }
+    },
+    {
+        "name": "Ostrich Oil",
+        "sap_koh": 0.195,
+        "sap_naoh": 0.139,
+        "qualities": {
+            "hardness": 36,
+            "cleansing": 4,
+            "conditioning": 57,
+            "bubbly": 4,
+            "creamy": 32,
+            "iodine": 97,
+            "ins": 128
+        },
+        "fatty_acids": {
+            "lauric": 3,
+            "myristic": 1,
+            "palmitic": 26,
+            "stearic": 6,
+            "ricinoleic": 0,
+            "oleic": 37,
+            "linoleic": 17,
+            "linolenic": 3
+        }
+    },
+    {
+        "name": "Palm Kernel Oil",
+        "sap_koh": 0.247,
+        "sap_naoh": 0.176,
+        "qualities": {
+            "hardness": 75,
+            "cleansing": 65,
+            "conditioning": 18,
+            "bubbly": 65,
+            "creamy": 10,
+            "iodine": 20,
+            "ins": 227
+        },
+        "fatty_acids": {
+            "lauric": 49,
+            "myristic": 16,
+            "palmitic": 8,
+            "stearic": 2,
+            "ricinoleic": 0,
+            "oleic": 15,
+            "linoleic": 3,
+            "linolenic": 0
+        }
+    }
+]

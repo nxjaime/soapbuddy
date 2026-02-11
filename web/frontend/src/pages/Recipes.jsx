@@ -57,8 +57,14 @@ export default function Recipes() {
     });
 
     useEffect(() => {
-        loadRecipes();
         loadIngredients();
+    }, []);
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            loadRecipes();
+        }, 500);
+        return () => clearTimeout(timer);
     }, [searchTerm]);
 
     async function loadRecipes() {

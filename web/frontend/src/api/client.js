@@ -292,70 +292,115 @@ export const updateBatch = async (id, batchData) => {
 };
 
 // ============ Lye Calculator ============
-// Note: This is computed client-side since it doesn't need database
-
-const SAP_VALUES = {
-    // Common oils SAP values (NaOH)
-    'Olive Oil': 0.135,
-    'Coconut Oil': 0.178,
-    'Palm Oil': 0.141,
-    'Castor Oil': 0.128,
-    'Shea Butter': 0.128,
-    'Cocoa Butter': 0.137,
-    'Sweet Almond Oil': 0.136,
-    'Avocado Oil': 0.133,
-    'Sunflower Oil': 0.134,
-    'Lard': 0.138,
-    'Tallow': 0.140
-};
 
 export const calculateLye = async (request) => {
-    // Fetch ingredients with SAP values from database
-    const { data: ingredients } = await supabase
+    // Fetch ingredients with SAP values and Fatty Acid profiles from database
+    const { data: ingredientsData } = await supabase
         .from('ingredients')
-        .select('id, name, sap_naoh, sap_koh')
+        .select(`
+            *,
+            fatty_acid_profile:fatty_acid_profiles(*)
+        `)
         .in('id', request.oils.map(o => o.ingredient_id));
 
     const ingredientMap = {};
-    ingredients?.forEach(ing => {
+    ingredientsData?.forEach(ing => {
         ingredientMap[ing.id] = ing;
     });
 
-    let totalOilWeight = 0;
+    let totalWeight = 0;
     let totalNaOH = 0;
     let totalKOH = 0;
+
+    // Quality totals (weighted averages)
+    const qualities = {
+        hardness: 0,
+        cleansing: 0,
+        conditioning: 0,
+        bubbly: 0,
+        creamy: 0,
+        iodine: 0,
+        ins: 0
+    };
+
+    // Fatty acid totals (percentages)
+    const fattyAcids = {
+        lauric: 0,
+        myristic: 0,
+        palmitic: 0,
+        stearic: 0,
+        ricinoleic: 0,
+        oleic: 0,
+        linoleic: 0,
+        linolenic: 0
+    };
 
     request.oils.forEach(oil => {
         const ing = ingredientMap[oil.ingredient_id];
         if (ing) {
-            totalOilWeight += oil.weight;
-            totalNaOH += oil.weight * (ing.sap_naoh || 0);
-            totalKOH += oil.weight * (ing.sap_koh || 0);
+            const weight = parseFloat(oil.weight) || 0;
+            totalWeight += weight;
+            totalNaOH += weight * (ing.sap_naoh || 0);
+            totalKOH += weight * (ing.sap_koh || 0);
+
+            // Fetch profile data
+            const profile = ing.fatty_acid_profile;
+            if (profile) {
+                // We'll calculate qualities as weighted averages
+                // SoapCalc often uses the percentage of the oil in the blend
+                // but weight is also fine for ratios.
+                Object.keys(qualities).forEach(key => {
+                    qualities[key] += (parseFloat(profile[key]) || 0) * weight;
+                });
+                Object.keys(fattyAcids).forEach(key => {
+                    fattyAcids[key] += (parseFloat(profile[key]) || 0) * weight;
+                });
+            }
         }
     });
+
+    if (totalWeight > 0) {
+        // Normalize qualities and fatty acids by total weight
+        Object.keys(qualities).forEach(key => qualities[key] /= totalWeight);
+        Object.keys(fattyAcids).forEach(key => fattyAcids[key] /= totalWeight);
+    }
 
     // Apply superfat
     const superfatMultiplier = 1 - (request.superfat_percentage / 100);
     totalNaOH *= superfatMultiplier;
     totalKOH *= superfatMultiplier;
 
-    // Calculate water
-    const waterAmount = totalOilWeight * (request.water_percentage / 100);
-
-    let lyeAmount = 0;
-    if (request.lye_type === 'NaOH') {
-        lyeAmount = totalNaOH;
-    } else if (request.lye_type === 'KOH') {
-        lyeAmount = totalKOH;
-    } else {
-        // Dual lye - 50/50 by default
-        lyeAmount = (totalNaOH + totalKOH) / 2;
+    // Handle KOH purity (typically 90%)
+    if (request.koh_purity_90) {
+        totalKOH /= 0.90;
     }
 
+    // Calculate water based on method
+    let waterAmount = 0;
+    if (request.water_method === 'percentage') {
+        waterAmount = totalWeight * (request.water_value / 100);
+    } else if (request.water_method === 'ratio') {
+        const lyeWeight = request.lye_type === 'NaOH' ? totalNaOH : totalKOH;
+        waterAmount = lyeWeight * request.water_value;
+    } else if (request.water_method === 'concentration') {
+        const lyeWeight = request.lye_type === 'NaOH' ? totalNaOH : totalKOH;
+        // concentration = lye / (lye + water)
+        // water = (lye / concentration) - lye
+        waterAmount = (lyeWeight / (request.water_value / 100)) - lyeWeight;
+    }
+
+    // Calculate Fragrance
+    const fragranceAmount = totalWeight * (request.fragrance_ratio || 0);
+
     return {
-        lye_amount: Math.round(lyeAmount * 100) / 100,
-        water_amount: Math.round(waterAmount * 100) / 100,
-        total_oil_weight: totalOilWeight,
+        lye_naoh: Math.round(totalNaOH * 100) / 100,
+        lye_koh: Math.round(totalKOH * 100) / 100,
+        water: Math.round(waterAmount * 100) / 100,
+        fragrance: Math.round(fragranceAmount * 100) / 100,
+        total_oils: Math.round(totalWeight * 100) / 100,
+        total_batch_weight: Math.round((totalWeight + (request.lye_type === 'NaOH' ? totalNaOH : totalKOH) + waterAmount + fragranceAmount) * 100) / 100,
+        qualities: Object.fromEntries(Object.entries(qualities).map(([k, v]) => [k, Math.round(v)])),
+        fattyAcids: Object.fromEntries(Object.entries(fattyAcids).map(([k, v]) => [k, Math.round(v)])),
         lye_type: request.lye_type,
         superfat_percentage: request.superfat_percentage
     };
@@ -632,7 +677,31 @@ export const getDashboardStats = async () => {
         total_ingredients: ingredientCount || 0,
         total_recipes: recipeCount || 0,
         total_batches: batchCount || 0,
-        active_batches: activeBatches?.length || 0
+        active_batches: activeBatches?.length || 0,
+        total_customers: 0,
+        total_sales: 0,
+        total_supplies: 0
+    };
+
+    // Add remaining counts
+    const [
+        { count: customerCount },
+        { count: salesCount },
+        { count: supplyCount }
+    ] = await Promise.all([
+        supabase.from('customers').select('*', { count: 'exact', head: true }),
+        supabase.from('sales_orders').select('*', { count: 'exact', head: true }),
+        supabase.from('supply_orders').select('*', { count: 'exact', head: true })
+    ]);
+
+    return {
+        total_ingredients: ingredientCount || 0,
+        total_recipes: recipeCount || 0,
+        total_batches: batchCount || 0,
+        active_batches: activeBatches?.length || 0,
+        total_customers: customerCount || 0,
+        total_sales: salesCount || 0,
+        total_supplies: supplyCount || 0
     };
 };
 
@@ -656,6 +725,52 @@ export const getFinancialSummary = async () => {
     return {
         total_revenue: totalRevenue,
         total_expenses: totalExpenses,
-        net_profit: totalRevenue - totalExpenses
+        net_profit: totalRevenue - totalExpenses,
+        margin: totalRevenue > 0 ? ((totalRevenue - totalExpenses) / totalRevenue) * 100 : 0
     };
+};
+
+export const getRecentActivity = async () => {
+    ensureClient();
+    const [
+        { data: sales },
+        { data: batches },
+        { data: expenses }
+    ] = await Promise.all([
+        supabase.from('sales_orders').select('*').order('sale_date', { ascending: false }).limit(5),
+        supabase.from('production_batches').select('*, recipe:recipes(name)').order('created_at', { ascending: false }).limit(5),
+        supabase.from('expenses').select('*').order('date', { ascending: false }).limit(5)
+    ]);
+
+    const activities = [];
+
+    sales?.forEach(s => {
+        activities.push({
+            type: 'sale',
+            title: `Sale: $${s.total_amount.toFixed(2)}`,
+            date: s.sale_date,
+            amount: s.total_amount
+        });
+    });
+
+    batches?.forEach(b => {
+        activities.push({
+            type: 'batch',
+            title: `Batch: ${b.lot_number}`,
+            subtitle: b.recipe?.name || 'Unknown',
+            date: b.created_at
+        });
+    });
+
+    expenses?.forEach(e => {
+        activities.push({
+            type: 'expense',
+            title: `Expense: ${e.description}`,
+            subtitle: `$${e.amount.toFixed(2)}`,
+            date: e.date,
+            amount: e.amount
+        });
+    });
+
+    return activities.sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 10);
 };

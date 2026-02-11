@@ -78,7 +78,8 @@ CREATE TABLE IF NOT EXISTS batch_ingredient_usage (
     id SERIAL PRIMARY KEY,
     batch_id INTEGER NOT NULL REFERENCES production_batches(id) ON DELETE CASCADE,
     ingredient_id INTEGER NOT NULL REFERENCES ingredients(id) ON DELETE RESTRICT,
-    quantity_used DECIMAL(10, 2) NOT NULL,
+    planned_quantity DECIMAL(10, 2) NOT NULL,
+    quantity_used DECIMAL(10, 2), -- Null until batch is finalized or updated with actuals
     unit VARCHAR(20) NOT NULL DEFAULT 'g',
     cost DECIMAL(10, 2) NOT NULL DEFAULT 0.0
 );
@@ -201,6 +202,17 @@ CREATE INDEX IF NOT EXISTS idx_customers_name ON customers(name);
 CREATE INDEX IF NOT EXISTS idx_sales_orders_date ON sales_orders(sale_date);
 CREATE INDEX IF NOT EXISTS idx_expenses_date ON expenses(date);
 
+-- Foreign Key Indexes for Performance
+CREATE INDEX IF NOT EXISTS idx_batch_usage_batch ON batch_ingredient_usage(batch_id);
+CREATE INDEX IF NOT EXISTS idx_batch_usage_ingredient ON batch_ingredient_usage(ingredient_id);
+CREATE INDEX IF NOT EXISTS idx_production_recipe ON production_batches(recipe_id);
+CREATE INDEX IF NOT EXISTS idx_recipe_ing_recipe ON recipe_ingredients(recipe_id);
+CREATE INDEX IF NOT EXISTS idx_recipe_ing_ingredient ON recipe_ingredients(ingredient_id);
+CREATE INDEX IF NOT EXISTS idx_sales_items_order ON sales_order_items(order_id);
+CREATE INDEX IF NOT EXISTS idx_sales_customer ON sales_orders(customer_id);
+CREATE INDEX IF NOT EXISTS idx_supply_items_order ON supply_order_items(order_id);
+CREATE INDEX IF NOT EXISTS idx_supply_supplier ON supply_orders(supplier_id);
+
 -- ============================================================
 -- Helper Functions (RPC)
 -- ============================================================
@@ -214,7 +226,7 @@ BEGIN
         updated_at = NOW()
     WHERE id = recipe_id;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 -- Function to decrement recipe stock (called when sale completes)
 CREATE OR REPLACE FUNCTION decrement_stock(recipe_id INTEGER, amount INTEGER)
@@ -225,7 +237,119 @@ BEGIN
         updated_at = NOW()
     WHERE id = recipe_id;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+-- Function to finalize a production batch
+-- Deducts ingredients from inventory, adds finished goods to stock, and marks batch complete
+CREATE OR REPLACE FUNCTION finalize_batch(p_batch_id INTEGER)
+RETURNS VOID AS $$
+DECLARE
+    v_recipe_id INTEGER;
+    v_yield_quantity INTEGER;
+    v_usage RECORD;
+BEGIN
+    -- 1. Get batch details
+    SELECT recipe_id, yield_quantity INTO v_recipe_id, v_yield_quantity
+    FROM production_batches
+    WHERE id = p_batch_id;
+
+    -- 2. Deduct Ingredients from Inventory
+    FOR v_usage IN 
+        SELECT ingredient_id, COALESCE(quantity_used, planned_quantity) as actual_qty 
+        FROM batch_ingredient_usage 
+        WHERE batch_id = p_batch_id
+    LOOP
+        UPDATE ingredients
+        SET quantity_on_hand = quantity_on_hand - v_usage.actual_qty,
+            updated_at = NOW()
+        WHERE id = v_usage.ingredient_id;
+        
+        -- Mark the usage as actualized if it wasn't
+        UPDATE batch_ingredient_usage
+        SET quantity_used = v_usage.actual_qty
+        WHERE batch_id = p_batch_id AND ingredient_id = v_usage.ingredient_id AND quantity_used IS NULL;
+    END LOOP;
+
+    -- 3. Add Finished Goods to Recipe Stock
+    IF v_yield_quantity > 0 THEN
+        UPDATE recipes
+        SET stock_quantity = stock_quantity + v_yield_quantity,
+            updated_at = NOW()
+        WHERE id = v_recipe_id;
+    END IF;
+
+    -- 4. Mark Batch as Complete
+    UPDATE production_batches
+    SET status = 'Complete',
+        production_date = COALESCE(production_date, NOW()),
+        updated_at = NOW()
+    WHERE id = p_batch_id;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+-- Function to receive a supply order and update inventory using Weighted Average Cost (WAC)
+CREATE OR REPLACE FUNCTION receive_supply_order(p_order_id INTEGER)
+RETURNS VOID AS $$
+DECLARE
+    v_item RECORD;
+    v_current_qty DECIMAL(10, 2);
+    v_current_cost DECIMAL(10, 4);
+    v_new_qty DECIMAL(10, 2);
+    v_new_cost DECIMAL(10, 4);
+BEGIN
+    -- 1. Mark order as Received if it wasn't
+    UPDATE supply_orders 
+    SET status = 'Received'
+    WHERE id = p_order_id;
+
+    -- 2. Process each item
+    FOR v_item IN 
+        SELECT ingredient_id, quantity, cost 
+        FROM supply_order_items 
+        WHERE order_id = p_order_id
+    LOOP
+        -- Get current inventory state
+        SELECT quantity_on_hand, cost_per_unit INTO v_current_qty, v_current_cost
+        FROM ingredients
+        WHERE id = v_item.ingredient_id;
+
+        -- Calculate New Weighted Average Cost (WAC)
+        -- Formula: (Total Value Existing + Total Value New) / (Total Quantity Existing + Total Quantity New)
+        v_new_qty := v_current_qty + v_item.quantity;
+        
+        IF v_new_qty > 0 THEN
+            v_new_cost := ( (GREATEST(v_current_qty, 0) * v_current_cost) + v_item.cost ) / v_new_qty;
+        ELSE
+            -- Fallback to unit cost of new item if total quantity is not positive
+            IF v_item.quantity > 0 THEN
+                v_new_cost := v_item.cost / v_item.quantity;
+            ELSE
+                v_new_cost := v_current_cost;
+            END IF;
+        END IF;
+
+        -- Update Ingredient
+        UPDATE ingredients
+        SET quantity_on_hand = v_new_qty,
+            cost_per_unit = v_new_cost,
+            updated_at = NOW()
+        WHERE id = v_item.ingredient_id;
+    END LOOP;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+-- Function to update recipe ingredients transactionally
+CREATE OR REPLACE FUNCTION update_recipe_ingredients(
+  p_recipe_id INT, p_ingredients JSONB
+) RETURNS VOID AS $$
+BEGIN
+  DELETE FROM recipe_ingredients WHERE recipe_id = p_recipe_id;
+  INSERT INTO recipe_ingredients (recipe_id, ingredient_id, quantity, unit)
+  SELECT p_recipe_id, (i->>'ingredient_id')::int, (i->>'quantity')::decimal, i->>'unit'
+  FROM jsonb_array_elements(p_ingredients) i;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
 
 -- ============================================================
 -- Auto-update timestamps trigger
@@ -272,21 +396,26 @@ ALTER TABLE sales_orders ENABLE ROW LEVEL SECURITY;
 ALTER TABLE sales_order_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE expenses ENABLE ROW LEVEL SECURITY;
 
--- Temporary: Allow all operations for anonymous users
--- Replace with proper user-based policies after adding auth
-CREATE POLICY "Allow all for anon" ON ingredients FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow all for anon" ON recipes FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow all for anon" ON recipe_ingredients FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow all for anon" ON production_batches FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow all for anon" ON batch_ingredient_usage FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow all for anon" ON fatty_acid_profiles FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow all for anon" ON suppliers FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow all for anon" ON supply_orders FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow all for anon" ON supply_order_items FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow all for anon" ON customers FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow all for anon" ON sales_orders FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow all for anon" ON sales_order_items FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow all for anon" ON expenses FOR ALL USING (true) WITH CHECK (true);
+-- ============================================================
+-- Authentication & RLS Setup
+-- ============================================================
+
+-- 1. Revoke public access (implicitly done by ENABLE RLS + no public policies)
+-- 2. Create policies for Authenticated users
+
+CREATE POLICY "Authenticated users only" ON ingredients FOR ALL TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "Authenticated users only" ON recipes FOR ALL TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "Authenticated users only" ON recipe_ingredients FOR ALL TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "Authenticated users only" ON production_batches FOR ALL TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "Authenticated users only" ON batch_ingredient_usage FOR ALL TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "Authenticated users only" ON fatty_acid_profiles FOR ALL TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "Authenticated users only" ON suppliers FOR ALL TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "Authenticated users only" ON supply_orders FOR ALL TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "Authenticated users only" ON supply_order_items FOR ALL TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "Authenticated users only" ON customers FOR ALL TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "Authenticated users only" ON sales_orders FOR ALL TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "Authenticated users only" ON sales_order_items FOR ALL TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "Authenticated users only" ON expenses FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
 -- ============================================================
 -- Sample Data (optional - uncomment to add)

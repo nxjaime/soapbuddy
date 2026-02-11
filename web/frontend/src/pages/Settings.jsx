@@ -1,46 +1,53 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
-    Settings as SettingsIcon,
-    Moon,
-    Sun,
     Save,
-    Database,
     Bell,
+    Monitor,
+    Database,
+    Building2,
+    User,
     Palette,
-    User
+    Moon,
+    Sun
 } from 'lucide-react';
+import { useSettings } from '../contexts/SettingsContext';
 
 export default function Settings() {
-    const [settings, setSettings] = useState({
-        businessName: 'My Soap Business',
-        ownerName: '',
-        email: '',
-        currency: 'USD',
-        defaultUnit: 'g',
-        lowStockThreshold: 100,
-        theme: 'dark'
-    });
-
+    const { settings: globalSettings, updateSettings } = useSettings();
+    const [localSettings, setLocalSettings] = useState(globalSettings);
+    const [saving, setSaving] = useState(false);
     const [saved, setSaved] = useState(false);
 
-    function handleChange(field, value) {
-        setSettings(prev => ({ ...prev, [field]: value }));
-        setSaved(false);
-    }
+    useEffect(() => {
+        setLocalSettings(globalSettings);
+    }, [globalSettings]);
 
-    function handleSave(e) {
+    const handleSettingChange = (e) => {
+        const { name, value, type, checked } = e.target;
+        setLocalSettings(prev => ({
+            ...prev,
+            [name]: type === 'checkbox' ? checked : value
+        }));
+    };
+
+    const handleSave = async (e) => {
         e.preventDefault();
-        // In a real app, this would save to backend/localStorage
-        localStorage.setItem('soapmanager_settings', JSON.stringify(settings));
+        setSaving(true);
+        // Simulate API delay
+        await new Promise(resolve => setTimeout(resolve, 800));
+        updateSettings(localSettings);
+        setSaving(false);
         setSaved(true);
         setTimeout(() => setSaved(false), 3000);
-    }
+    };
+
+    if (!localSettings) return null;
 
     return (
         <div>
             <div className="page-header">
                 <h1 className="page-title">
-                    <SettingsIcon className="icon" />
+                    <Monitor className="icon" />
                     Settings
                 </h1>
             </div>
@@ -59,31 +66,22 @@ export default function Settings() {
                             <label className="form-label">Business Name</label>
                             <input
                                 type="text"
+                                name="businessName"
                                 className="form-input"
-                                value={settings.businessName}
-                                onChange={(e) => handleChange('businessName', e.target.value)}
+                                value={localSettings.businessName || ''}
+                                onChange={handleSettingChange}
                                 placeholder="Your Soap Company"
                             />
                         </div>
 
                         <div className="form-group">
-                            <label className="form-label">Owner Name</label>
-                            <input
-                                type="text"
-                                className="form-input"
-                                value={settings.ownerName}
-                                onChange={(e) => handleChange('ownerName', e.target.value)}
-                                placeholder="Your Name"
-                            />
-                        </div>
-
-                        <div className="form-group">
-                            <label className="form-label">Email</label>
+                            <label className="form-label">Contact Email</label>
                             <input
                                 type="email"
+                                name="contactEmail"
                                 className="form-input"
-                                value={settings.email}
-                                onChange={(e) => handleChange('email', e.target.value)}
+                                value={localSettings.contactEmail || ''}
+                                onChange={handleSettingChange}
                                 placeholder="you@example.com"
                             />
                         </div>
@@ -99,9 +97,10 @@ export default function Settings() {
                         <div className="form-group">
                             <label className="form-label">Currency</label>
                             <select
+                                name="currency"
                                 className="form-input form-select"
-                                value={settings.currency}
-                                onChange={(e) => handleChange('currency', e.target.value)}
+                                value={localSettings.currency || 'USD'}
+                                onChange={handleSettingChange}
                             >
                                 <option value="USD">USD ($)</option>
                                 <option value="EUR">EUR (€)</option>
@@ -114,9 +113,10 @@ export default function Settings() {
                         <div className="form-group">
                             <label className="form-label">Default Weight Unit</label>
                             <select
+                                name="weightUnit"
                                 className="form-input form-select"
-                                value={settings.defaultUnit}
-                                onChange={(e) => handleChange('defaultUnit', e.target.value)}
+                                value={localSettings.weightUnit || 'g'}
+                                onChange={handleSettingChange}
                             >
                                 <option value="g">Grams (g)</option>
                                 <option value="oz">Ounces (oz)</option>
@@ -130,18 +130,18 @@ export default function Settings() {
                             <div style={{ display: 'flex', gap: 'var(--spacing-sm)' }}>
                                 <button
                                     type="button"
-                                    className={`btn ${settings.theme === 'dark' ? 'btn-primary' : 'btn-secondary'}`}
-                                    onClick={() => handleChange('theme', 'dark')}
-                                    style={{ flex: 1 }}
+                                    className={`btn ${localSettings.theme === 'dark' ? 'btn-primary' : 'btn-secondary'} `}
+                                    onClick={() => handleSettingChange({ target: { name: 'theme', value: 'dark' } })}
+                                    style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
                                 >
                                     <Moon size={16} />
                                     Dark
                                 </button>
                                 <button
                                     type="button"
-                                    className={`btn ${settings.theme === 'light' ? 'btn-primary' : 'btn-secondary'}`}
-                                    onClick={() => handleChange('theme', 'light')}
-                                    style={{ flex: 1 }}
+                                    className={`btn ${localSettings.theme === 'light' ? 'btn-primary' : 'btn-secondary'} `}
+                                    onClick={() => handleSettingChange({ target: { name: 'theme', value: 'light' } })}
+                                    style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
                                 >
                                     <Sun size={16} />
                                     Light
@@ -161,9 +161,10 @@ export default function Settings() {
                             <label className="form-label">Low Stock Threshold (g)</label>
                             <input
                                 type="number"
+                                name="lowStockThreshold"
                                 className="form-input"
-                                value={settings.lowStockThreshold}
-                                onChange={(e) => handleChange('lowStockThreshold', parseInt(e.target.value))}
+                                value={localSettings.lowStockThreshold || 0}
+                                onChange={handleSettingChange}
                                 min="0"
                             />
                             <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '4px' }}>
@@ -181,16 +182,24 @@ export default function Settings() {
 
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-md)' }}>
                             <label style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)', cursor: 'pointer' }}>
-                                <input type="checkbox" defaultChecked style={{ width: '18px', height: '18px' }} />
-                                <span>Low stock alerts on dashboard</span>
+                                <input
+                                    type="checkbox"
+                                    name="enableNotifications"
+                                    checked={localSettings.enableNotifications || false}
+                                    onChange={handleSettingChange}
+                                    style={{ width: '18px', height: '18px' }}
+                                />
+                                <span>Enable Notifications</span>
                             </label>
                             <label style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)', cursor: 'pointer' }}>
-                                <input type="checkbox" defaultChecked style={{ width: '18px', height: '18px' }} />
-                                <span>Batch completion reminders</span>
-                            </label>
-                            <label style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)', cursor: 'pointer' }}>
-                                <input type="checkbox" style={{ width: '18px', height: '18px' }} />
-                                <span>Weekly summary reports</span>
+                                <input
+                                    type="checkbox"
+                                    name="emailAlerts"
+                                    checked={localSettings.emailAlerts || false}
+                                    onChange={handleSettingChange}
+                                    style={{ width: '18px', height: '18px' }}
+                                />
+                                <span>Email Alerts</span>
                             </label>
                         </div>
                     </div>
@@ -208,9 +217,9 @@ export default function Settings() {
                             ✓ Settings saved
                         </div>
                     )}
-                    <button type="submit" className="btn btn-primary">
+                    <button type="submit" className="btn btn-primary" disabled={saving}>
                         <Save size={18} />
-                        Save Settings
+                        {saving ? 'Saving...' : 'Save Settings'}
                     </button>
                 </div>
             </form>

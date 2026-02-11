@@ -14,23 +14,38 @@ import {
     Truck,
     Package,
     ArrowUpRight,
-    ArrowDownRight
+    ArrowDownRight,
+    Activity,
+    Droplets,
+    ScrollText
 } from 'lucide-react';
 import {
     getDashboardStats,
-    getSalesOrders,
-    getSupplyOrders,
-    getExpenses,
-    getBatches,
-    getCustomers
+    getFinancialSummary,
+    getRecentActivity
 } from '../api/client';
+import { useSettings } from '../contexts/SettingsContext';
 
 export default function Dashboard() {
-    const [stats, setStats] = useState(null);
-    const [financials, setFinancials] = useState(null);
-    const [recentActivity, setRecentActivity] = useState([]);
+    const { formatCurrency } = useSettings();
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [stats, setStats] = useState({
+        total_ingredients: 0,
+        total_recipes: 0,
+        total_batches: 0,
+        active_batches: 0,
+        total_customers: 0,
+        total_sales: 0,
+        total_supplies: 0
+    });
+    const [financials, setFinancials] = useState({
+        revenue: 0,
+        costs: 0,
+        profit: 0,
+        margin: 0
+    });
+    const [recentActivity, setRecentActivity] = useState([]);
 
     useEffect(() => {
         loadDashboard();
@@ -39,76 +54,25 @@ export default function Dashboard() {
     async function loadDashboard() {
         try {
             setLoading(true);
-            const [statsData, sales, supplies, expenses, batches, customers] = await Promise.all([
+
+            const [statsData, financialData, activityData] = await Promise.all([
                 getDashboardStats(),
-                getSalesOrders(),
-                getSupplyOrders(),
-                getExpenses(),
-                getBatches(),
-                getCustomers()
+                getFinancialSummary(),
+                getRecentActivity()
             ]);
 
-            setStats({
-                ...statsData,
-                customers: customers.length,
-                sales_orders: sales.length,
-                supply_orders: supplies.length
-            });
-
-            // Calculate financials
-            const totalRevenue = sales.reduce((sum, o) => sum + (o.total_amount || 0), 0);
-            const totalSupplyCosts = supplies.reduce((sum, o) => sum + (o.total_cost || 0), 0);
-            const totalExpenses = expenses.reduce((sum, e) => sum + (e.amount || 0), 0);
-            const netProfit = totalRevenue - totalSupplyCosts - totalExpenses;
-
+            setStats(statsData);
             setFinancials({
-                revenue: totalRevenue,
-                costs: totalSupplyCosts + totalExpenses,
-                profit: netProfit,
-                margin: totalRevenue > 0 ? (netProfit / totalRevenue) * 100 : 0
+                revenue: financialData.total_revenue,
+                costs: financialData.total_expenses,
+                profit: financialData.net_profit,
+                margin: financialData.margin
             });
-
-            // Build recent activity feed
-            const activities = [];
-
-            sales.slice(0, 3).forEach(s => {
-                activities.push({
-                    type: 'sale',
-                    title: `Sale: $${s.total_amount.toFixed(2)}`,
-                    date: s.sale_date,
-                    icon: DollarSign,
-                    color: 'var(--color-success)'
-                });
-            });
-
-            batches.slice(0, 3).forEach(b => {
-                activities.push({
-                    type: 'batch',
-                    title: `Batch: ${b.lot_number}`,
-                    subtitle: b.recipe?.name || 'Unknown',
-                    date: b.created_at,
-                    icon: Package,
-                    color: 'var(--color-primary)'
-                });
-            });
-
-            expenses.slice(0, 2).forEach(e => {
-                activities.push({
-                    type: 'expense',
-                    title: `Expense: ${e.description}`,
-                    subtitle: `$${e.amount.toFixed(2)}`,
-                    date: e.date,
-                    icon: TrendingDown,
-                    color: 'var(--color-error)'
-                });
-            });
-
-            // Sort by date
-            activities.sort((a, b) => new Date(b.date) - new Date(a.date));
-            setRecentActivity(activities.slice(0, 6));
+            setRecentActivity(activityData);
 
         } catch (err) {
-            setError(err.message);
+            console.error('Error loading dashboard:', err);
+            setError('Failed to load dashboard data');
         } finally {
             setLoading(false);
         }
@@ -167,7 +131,7 @@ export default function Dashboard() {
                         <div>
                             <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Revenue</div>
                             <div style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--color-success)' }}>
-                                ${financials?.revenue.toFixed(2) || '0.00'}
+                                {formatCurrency(financials?.revenue || 0)}
                             </div>
                         </div>
                         <div style={{
@@ -185,7 +149,7 @@ export default function Dashboard() {
                         <div>
                             <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Costs</div>
                             <div style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--color-error)' }}>
-                                ${financials?.costs.toFixed(2) || '0.00'}
+                                {formatCurrency(financials?.costs || 0)}
                             </div>
                         </div>
                         <div style={{
@@ -206,7 +170,7 @@ export default function Dashboard() {
                                 fontSize: '1.5rem', fontWeight: 700,
                                 color: (financials?.profit || 0) >= 0 ? 'var(--color-success)' : 'var(--color-error)'
                             }}>
-                                ${financials?.profit.toFixed(2) || '0.00'}
+                                {formatCurrency(financials?.profit || 0)}
                             </div>
                         </div>
                         <div style={{

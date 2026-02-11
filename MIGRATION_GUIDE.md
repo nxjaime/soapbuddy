@@ -34,8 +34,8 @@ The application has been successfully migrated from a local Python backend to a 
    
 3. **Configure Environment Variables**
    In Vercel Project Settings -> Environment Variables, add:
-   - `VITE_SUPABASE_URL`: `https://ezkqfuxzcbtywtfubmon.supabase.co`
-   - `VITE_SUPABASE_ANON_KEY`: `sb_publishable_zC7Q2zzaHCGxHofdGqaC8w_RnpqwNi5`
+   - `VITE_SUPABASE_URL`: `YOUR_SUPABASE_URL`
+   - `VITE_SUPABASE_ANON_KEY`: `YOUR_SUPABASE_ANON_KEY`
 
 4. **Deploy**
    Click Deploy!

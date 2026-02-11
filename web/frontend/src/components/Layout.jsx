@@ -1,73 +1,87 @@
+import { useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
+import ErrorBoundary from './ErrorBoundary';
 import {
     LayoutDashboard,
     FlaskConical,
     BookOpen,
     Factory,
     Calculator,
-    Settings,
+    Settings as SettingsIcon,
     Droplets,
     Truck,
     ShoppingCart,
     Users,
     DollarSign,
     Receipt,
+    Menu,
+    X,
     BarChart3,
     FileSearch
 } from 'lucide-react';
 
-const navItems = [
-    { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
-    { to: '/ingredients', icon: FlaskConical, label: 'Ingredients' },
-    { to: '/suppliers', icon: Truck, label: 'Suppliers' },
-    { to: '/supply-orders', icon: ShoppingCart, label: 'Supply Orders' },
-    { to: '/customers', icon: Users, label: 'Customers' },
-    { to: '/sales-orders', icon: DollarSign, label: 'Sales Orders' },
-    { to: '/recipes', icon: BookOpen, label: 'Recipes' },
-    { to: '/production', icon: Factory, label: 'Production' },
-    { to: '/calculator', icon: Calculator, label: 'Lye Calculator' },
-    { to: '/expenses', icon: Receipt, label: 'Expenses' },
-    { to: '/financials', icon: BarChart3, label: 'Financials' },
-    { to: '/traceability', icon: FileSearch, label: 'Traceability' },
-];
-
 export default function Layout() {
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+    const navItems = [
+        { path: '/', icon: LayoutDashboard, label: 'Dashboard' },
+        { path: '/ingredients', icon: FlaskConical, label: 'Ingredients' },
+        { path: '/recipes', icon: BookOpen, label: 'Recipes' },
+        { path: '/production', icon: Factory, label: 'Production' },
+        { path: '/calculator', icon: Calculator, label: 'Calculator' },
+        { path: '/suppliers', icon: Truck, label: 'Suppliers' },
+        { path: '/supply-orders', icon: ShoppingCart, label: 'Supply Orders' },
+        { path: '/customers', icon: Users, label: 'Customers' },
+        { path: '/sales-orders', icon: DollarSign, label: 'Sales Orders' },
+        { path: '/expenses', icon: Receipt, label: 'Expenses' },
+        { path: '/financials', icon: BarChart3, label: 'Financials' },
+        { path: '/traceability', icon: FileSearch, label: 'Traceability' },
+        { path: '/settings', icon: SettingsIcon, label: 'Settings' }
+    ];
+
     return (
         <div className="app-layout">
-            <aside className="sidebar">
-                <div className="sidebar-header">
-                    <a href="/" className="sidebar-logo">
-                        <Droplets className="icon" style={{ color: 'var(--color-primary-light)' }} />
-                        <h1>SoapBuddy</h1>
-                    </a>
-                </div>
+            {/* Mobile Header */}
+            <header className="mobile-header">
+                <button className="menu-btn" onClick={() => setIsSidebarOpen(true)}>
+                    <Menu size={24} />
+                </button>
+                <div className="logo">SoapBuddy</div>
+            </header>
 
-                <nav className="sidebar-nav">
+            {/* Sidebar Overlay */}
+            {isSidebarOpen && (
+                <div className="sidebar-overlay" onClick={() => setIsSidebarOpen(false)} />
+            )}
+
+            <aside className={`sidebar ${isSidebarOpen ? 'open' : ''}`}>
+                <div className="sidebar-header">
+                    <div className="logo">SoapBuddy</div>
+                    <button className="close-btn" onClick={() => setIsSidebarOpen(false)}>
+                        <X size={24} />
+                    </button>
+                </div>
+                <nav className="nav-menu">
                     {navItems.map((item) => (
                         <NavLink
-                            key={item.to}
-                            to={item.to}
+                            key={item.path}
+                            to={item.path}
                             className={({ isActive }) =>
-                                `nav-link ${isActive ? 'active' : ''}`
+                                `nav-item ${isActive ? 'active' : ''}`
                             }
-                            end={item.to === '/'}
+                            onClick={() => setIsSidebarOpen(false)}
                         >
-                            <item.icon />
+                            <item.icon size={20} />
                             <span>{item.label}</span>
                         </NavLink>
                     ))}
                 </nav>
-
-                <div style={{ marginTop: 'auto', paddingTop: 'var(--spacing-lg)', borderTop: '1px solid var(--glass-border)' }}>
-                    <NavLink to="/settings" className="nav-link">
-                        <Settings />
-                        <span>Settings</span>
-                    </NavLink>
-                </div>
             </aside>
 
             <main className="main-content">
-                <Outlet />
+                <ErrorBoundary>
+                    <Outlet />
+                </ErrorBoundary>
             </main>
         </div>
     );
