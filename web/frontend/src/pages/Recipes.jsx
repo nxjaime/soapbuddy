@@ -9,7 +9,8 @@ import {
     FileText,
     Factory,
     Activity,
-    Scale
+    Scale,
+    Info
 } from 'lucide-react';
 import {
     Radar,
@@ -134,6 +135,8 @@ export default function Recipes() {
                 water_percentage: 33,
                 total_oils_weight: 500,
                 unit: 'g',
+                stock_quantity: 0,
+                default_price: 0.0,
                 notes: '',
                 ingredients: []
             });
@@ -182,8 +185,20 @@ export default function Recipes() {
         }
     }
 
+    function generateJulianLot() {
+        const now = new Date();
+        const start = new Date(now.getFullYear(), 0, 0);
+        const diff = now - start;
+        const oneDay = 1000 * 60 * 60 * 24;
+        const dayOfYear = Math.floor(diff / oneDay);
+        const yy = now.getFullYear().toString().slice(-2);
+        const ddd = dayOfYear.toString().padStart(3, '0');
+        const seq = now.getTime().toString().slice(-4);
+        return `${yy}${ddd}-${seq}`;
+    }
+
     async function handleMakeBatch(recipe) {
-        const lotNumber = `LOT-${Date.now()}`;
+        const lotNumber = generateJulianLot();
         try {
             await createBatch({
                 recipe_id: recipe.id,
@@ -504,7 +519,13 @@ export default function Recipes() {
 
                                 <div className="form-row">
                                     <div className="form-group">
-                                        <label className="form-label">Default Price ($)</label>
+                                        <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                            Default Price ($)
+                                            <span className="info-bubble">
+                                                <Info size={14} />
+                                                <span className="info-tooltip">The standard retail price per unit for this product. Used to auto-fill price on sales orders.</span>
+                                            </span>
+                                        </label>
                                         <input
                                             type="number"
                                             name="default_price"
@@ -516,7 +537,13 @@ export default function Recipes() {
                                         />
                                     </div>
                                     <div className="form-group">
-                                        <label className="form-label">Current Stock (Adjustment)</label>
+                                        <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                            Current Stock
+                                            <span className="info-bubble">
+                                                <Info size={14} />
+                                                <span className="info-tooltip">Manual adjustment of on-hand inventory count. This is separate from production batch tracking and is used for quick stock corrections.</span>
+                                            </span>
+                                        </label>
                                         <input
                                             type="number"
                                             name="stock_quantity"

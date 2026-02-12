@@ -10,7 +10,8 @@ import {
     PieChart,
     Calendar,
     Download,
-    Filter
+    Filter,
+    Clock
 } from 'lucide-react';
 import {
     getSalesOrders,
@@ -105,8 +106,13 @@ export default function Financials() {
         };
     }, [salesOrders, supplyOrders, expenses, dateRange, customStart, customEnd]);
 
-    // Calculate metrics from filtered data
-    const totalRevenue = filteredData.sales.reduce((sum, order) => sum + (order.total_amount || 0), 0);
+    // Calculate metrics from filtered data - separate completed vs pending
+    const completedSales = filteredData.sales.filter(s => s.status === 'Completed');
+    const pendingSales = filteredData.sales.filter(s => s.status === 'Draft' || s.status === 'Confirmed');
+
+    const completedRevenue = completedSales.reduce((sum, order) => sum + (order.total_amount || 0), 0);
+    const pendingRevenue = pendingSales.reduce((sum, order) => sum + (order.total_amount || 0), 0);
+    const totalRevenue = completedRevenue; // Only completed counts as actual revenue
     const totalSupplyCosts = filteredData.supplies.reduce((sum, order) => sum + (order.total_cost || 0), 0);
     const totalExpenses = filteredData.expenses.reduce((sum, exp) => sum + (exp.amount || 0), 0);
     const totalCosts = totalSupplyCosts + totalExpenses;
@@ -256,22 +262,42 @@ export default function Financials() {
                 gap: 'var(--spacing-md)',
                 marginBottom: 'var(--spacing-lg)'
             }}>
-                {/* Revenue Card */}
+                {/* Revenue Card (Completed Only) */}
                 <div className="card stat-card" style={{ padding: 'var(--spacing-md)' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                         <div>
                             <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '4px' }}>
-                                Revenue
+                                Revenue (Completed)
                             </div>
                             <div style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--color-success)' }}>
-                                ${totalRevenue.toFixed(2)}
+                                ${completedRevenue.toFixed(2)}
                             </div>
                             <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '4px' }}>
-                                {filteredData.sales.length} orders
+                                {completedSales.length} completed orders
                             </div>
                         </div>
                         <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'rgba(34, 197, 94, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                             <TrendingUp size={18} style={{ color: 'var(--color-success)' }} />
+                        </div>
+                    </div>
+                </div>
+
+                {/* Pending Revenue Card */}
+                <div className="card stat-card" style={{ padding: 'var(--spacing-md)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                        <div>
+                            <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '4px' }}>
+                                Pending Revenue
+                            </div>
+                            <div style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--color-warning)' }}>
+                                ${pendingRevenue.toFixed(2)}
+                            </div>
+                            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+                                {pendingSales.length} pending orders
+                            </div>
+                        </div>
+                        <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'rgba(245, 158, 11, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <Clock size={18} style={{ color: 'var(--color-warning)' }} />
                         </div>
                     </div>
                 </div>
@@ -416,7 +442,7 @@ export default function Financials() {
                     )}
                 </div>
 
-                {/* Recent Sales */}
+                {/* Recent Completed Sales */}
                 <div className="card" style={{ padding: 'var(--spacing-md)' }}>
                     <h3 style={{ marginBottom: 'var(--spacing-md)', display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <ShoppingCart size={20} />
@@ -434,9 +460,14 @@ export default function Financials() {
                                         <div style={{ fontWeight: 500 }}>{sale.customer?.name || 'Walk-in'}</div>
                                         <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{new Date(sale.sale_date).toLocaleDateString()}</div>
                                     </div>
-                                    <div style={{ fontWeight: 600, color: 'var(--color-success)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                        <ArrowUpRight size={14} />
-                                        ${sale.total_amount.toFixed(2)}
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)' }}>
+                                        <span className={`badge ${sale.status === 'Completed' ? 'badge-green' : sale.status === 'Cancelled' ? 'badge-red' : 'badge-yellow'}`} style={{ fontSize: '0.75rem' }}>
+                                            {sale.status}
+                                        </span>
+                                        <div style={{ fontWeight: 600, color: 'var(--color-success)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                            <ArrowUpRight size={14} />
+                                            ${(sale.total_amount || 0).toFixed(2)}
+                                        </div>
                                     </div>
                                 </div>
                             ))}
@@ -444,6 +475,49 @@ export default function Financials() {
                     )}
                 </div>
             </div>
+
+            {/* Pending Sales Section */}
+            {pendingSales.length > 0 && (
+                <div className="card" style={{ padding: 'var(--spacing-md)', marginTop: 'var(--spacing-lg)' }}>
+                    <h3 style={{ marginBottom: 'var(--spacing-md)', display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--color-warning)' }}>
+                        <Clock size={20} />
+                        Pending Sales Orders ({pendingSales.length})
+                    </h3>
+                    <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: 'var(--spacing-md)' }}>
+                        These orders are not yet included in your revenue calculations.
+                    </p>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem' }}>
+                        <thead>
+                            <tr style={{ color: 'var(--text-muted)', textAlign: 'left', borderBottom: '1px solid var(--glass-border)' }}>
+                                <th style={{ padding: '8px 0' }}>Customer</th>
+                                <th style={{ padding: '8px 0' }}>Date</th>
+                                <th style={{ padding: '8px 0' }}>Status</th>
+                                <th style={{ padding: '8px 0', textAlign: 'right' }}>Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {pendingSales.map(sale => (
+                                <tr key={sale.id} style={{ borderBottom: '1px solid var(--glass-border)' }}>
+                                    <td style={{ padding: '10px 0', fontWeight: 500 }}>{sale.customer?.name || 'Walk-in'}</td>
+                                    <td style={{ padding: '10px 0', color: 'var(--text-muted)' }}>{new Date(sale.sale_date).toLocaleDateString()}</td>
+                                    <td style={{ padding: '10px 0' }}>
+                                        <span className="badge badge-yellow">{sale.status}</span>
+                                    </td>
+                                    <td style={{ padding: '10px 0', textAlign: 'right', fontWeight: 600, color: 'var(--color-warning)' }}>
+                                        ${(sale.total_amount || 0).toFixed(2)}
+                                    </td>
+                                </tr>
+                            ))}
+                            <tr style={{ fontWeight: 700, borderTop: '2px solid var(--glass-border)' }}>
+                                <td colSpan="3" style={{ padding: '10px 0' }}>Total Pending</td>
+                                <td style={{ padding: '10px 0', textAlign: 'right', color: 'var(--color-warning)' }}>
+                                    ${pendingRevenue.toFixed(2)}
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            )}
         </div>
     );
 }

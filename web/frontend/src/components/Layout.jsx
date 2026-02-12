@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import ErrorBoundary from './ErrorBoundary';
+import { useSettings } from '../contexts/SettingsContext';
 import {
     LayoutDashboard,
     FlaskConical,
@@ -17,18 +18,21 @@ import {
     Menu,
     X,
     BarChart3,
-    FileSearch
+    FileSearch,
+    Warehouse
 } from 'lucide-react';
 
 export default function Layout() {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const { isTabVisible } = useSettings();
 
-    const navItems = [
-        { path: '/', icon: LayoutDashboard, label: 'Dashboard' },
+    const allNavItems = [
+        { path: '/', icon: LayoutDashboard, label: 'Dashboard', alwaysVisible: true },
         { path: '/ingredients', icon: FlaskConical, label: 'Ingredients' },
+        { path: '/calculator', icon: Calculator, label: 'Calculator' },
         { path: '/recipes', icon: BookOpen, label: 'Recipes' },
         { path: '/production', icon: Factory, label: 'Production' },
-        { path: '/calculator', icon: Calculator, label: 'Calculator' },
+        { path: '/inventory', icon: Warehouse, label: 'Inventory' },
         { path: '/suppliers', icon: Truck, label: 'Suppliers' },
         { path: '/supply-orders', icon: ShoppingCart, label: 'Supply Orders' },
         { path: '/customers', icon: Users, label: 'Customers' },
@@ -36,8 +40,10 @@ export default function Layout() {
         { path: '/expenses', icon: Receipt, label: 'Expenses' },
         { path: '/financials', icon: BarChart3, label: 'Financials' },
         { path: '/traceability', icon: FileSearch, label: 'Traceability' },
-        { path: '/settings', icon: SettingsIcon, label: 'Settings' }
+        { path: '/settings', icon: SettingsIcon, label: 'Settings', alwaysVisible: true }
     ];
+
+    const navItems = allNavItems.filter(item => item.alwaysVisible || isTabVisible(item.path));
 
     return (
         <div className="app-layout">
@@ -86,3 +92,4 @@ export default function Layout() {
         </div>
     );
 }
+

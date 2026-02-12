@@ -281,10 +281,11 @@ export const updateBatch = async (id, batchData) => {
     if (batchData.status === 'Complete' && currentBatch?.status !== 'Complete') {
         const yieldQty = batchData.yield_quantity || currentBatch?.yield_quantity || 0;
         if (yieldQty > 0 && currentBatch?.recipe_id) {
-            await supabase.rpc('increment_stock', {
+            const { error: rpcError } = await supabase.rpc('increment_stock', {
                 recipe_id: currentBatch.recipe_id,
                 amount: yieldQty
             });
+            if (rpcError) handleError(rpcError, 'increment stock');
         }
     }
 
@@ -509,6 +510,46 @@ export const createSupplyOrder = async (orderData) => {
     return getSupplyOrder(newOrder.id);
 };
 
+export const updateSupplyOrder = async (id, updateData) => {
+    ensureClient();
+
+    // Handle items update if provided
+    if (updateData.items) {
+        // Delete old items
+        await supabase.from('supply_order_items').delete().eq('order_id', id);
+
+        // Insert new items
+        const orderItems = updateData.items.map(item => ({
+            order_id: id,
+            ingredient_id: parseInt(item.ingredient_id),
+            quantity: parseFloat(item.quantity),
+            unit: item.unit || 'g',
+            cost: parseFloat(item.cost)
+        }));
+
+        const { error: itemsError } = await supabase
+            .from('supply_order_items')
+            .insert(orderItems);
+        if (itemsError) handleError(itemsError, 'update supply order items');
+
+        // Recalculate total cost
+        updateData.total_cost = orderItems.reduce((sum, item) => sum + item.cost, 0);
+    }
+
+    // Remove items from the update payload (they go in supply_order_items, not supply_orders)
+    const { items: _items, ...orderUpdate } = updateData;
+
+    const { data, error } = await supabase
+        .from('supply_orders')
+        .update(orderUpdate)
+        .eq('id', id)
+        .select()
+        .single();
+
+    if (error) handleError(error, 'update supply order');
+    return data;
+};
+
 // ============ Customers ============
 
 export const getCustomers = async () => {
@@ -599,18 +640,147 @@ export const createSalesOrder = async (orderData) => {
 
         if (itemsError) handleError(itemsError, 'add sales order items');
 
-        // Deduct stock if order is completed
-        if (order.status === 'Completed') {
-            for (const item of items) {
-                await supabase.rpc('decrement_stock', {
-                    recipe_id: item.recipe_id,
-                    amount: item.quantity
-                });
-            }
+        // If Draft or Completed, deduct inventory using FIFO
+        if (order.status === 'Draft' || order.status === 'Completed') {
+            await _deductInventoryForOrder(items, order.source_location_id);
         }
     }
 
     return newOrder;
+};
+
+// Internal helper: Deduct inventory using FIFO from a specific location (or all)
+async function _deductInventoryForOrder(items, locationId) {
+    for (const item of items) {
+        // General stock summary decrement
+        const { error: rpcError } = await supabase.rpc('decrement_stock', {
+            recipe_id: item.recipe_id,
+            amount: item.quantity
+        });
+        if (rpcError) console.error('decrement_stock error:', rpcError);
+
+        // FIFO lot fulfillment
+        let remainingToFulfill = item.quantity;
+        let query = supabase
+            .from('inventory_items')
+            .select('*')
+            .eq('recipe_id', item.recipe_id)
+            .gt('quantity', 0)
+            .order('moved_at', { ascending: true });
+
+        if (locationId) {
+            query = query.eq('location_id', locationId);
+        }
+
+        const { data: lots, error: lotsError } = await query;
+
+        if (lots && !lotsError) {
+            for (const lot of lots) {
+                if (remainingToFulfill <= 0) break;
+                if (lot.quantity <= remainingToFulfill) {
+                    remainingToFulfill -= lot.quantity;
+                    await supabase.from('inventory_items').delete().eq('id', lot.id);
+                } else {
+                    await supabase.from('inventory_items')
+                        .update({ quantity: lot.quantity - remainingToFulfill })
+                        .eq('id', lot.id);
+                    remainingToFulfill = 0;
+                }
+            }
+        }
+    }
+}
+
+// Internal helper: Return inventory to a location
+async function _returnInventoryForOrder(items, locationId) {
+    for (const item of items) {
+        // General stock summary increment
+        const { error: rpcError } = await supabase.rpc('increment_stock', {
+            recipe_id: item.recipe_id,
+            amount: item.quantity
+        });
+        if (rpcError) console.error('increment_stock error:', rpcError);
+
+        // Create inventory item at the specified location
+        if (locationId) {
+            await supabase.from('inventory_items').insert({
+                recipe_id: item.recipe_id,
+                location_id: locationId,
+                quantity: item.quantity,
+                notes: 'Returned from cancelled sales order'
+            });
+        }
+    }
+}
+
+export const updateSalesOrder = async (id, updateData) => {
+    ensureClient();
+
+    // Get the current order state + items to detect status changes
+    const { data: currentOrder, error: fetchError } = await supabase
+        .from('sales_orders')
+        .select(`*, items:sales_order_items(*)`)
+        .eq('id', id)
+        .single();
+
+    if (fetchError) handleError(fetchError, 'fetch current sales order');
+
+    const oldStatus = currentOrder.status;
+    const newStatus = updateData.status || oldStatus;
+
+    // Handle items update if provided
+    if (updateData.items) {
+        // Delete old items
+        await supabase.from('sales_order_items').delete().eq('order_id', id);
+
+        // Insert new items
+        const orderItems = updateData.items.map(item => ({
+            order_id: id,
+            recipe_id: parseInt(item.recipe_id),
+            quantity: parseInt(item.quantity),
+            unit_price: parseFloat(item.unit_price),
+            discount: parseFloat(item.discount || 0)
+        }));
+
+        const { error: itemsError } = await supabase
+            .from('sales_order_items')
+            .insert(orderItems);
+        if (itemsError) handleError(itemsError, 'update sales order items');
+
+        // Recalculate total
+        updateData.total_amount = orderItems.reduce(
+            (sum, item) => sum + (item.unit_price * item.quantity) - (item.discount || 0), 0
+        );
+    }
+
+    // Prepare update payload (exclude items array from the orders table update)
+    const { items: _items, source_location_id, return_location_id, ...orderUpdate } = updateData;
+
+    // Update the order record
+    const { data, error } = await supabase
+        .from('sales_orders')
+        .update(orderUpdate)
+        .eq('id', id)
+        .select()
+        .single();
+
+    if (error) handleError(error, 'update sales order');
+
+    // Handle inventory changes based on status transitions
+    const orderItems = updateData.items || currentOrder.items;
+
+    // Moving INTO reserved/sold state → deduct from inventory
+    if ((newStatus === 'Draft' || newStatus === 'Completed') &&
+        oldStatus !== 'Draft' && oldStatus !== 'Completed') {
+        await _deductInventoryForOrder(orderItems, source_location_id);
+    }
+
+    // Cancelling → return inventory
+    if (newStatus === 'Cancelled' && (oldStatus === 'Draft' || oldStatus === 'Completed')) {
+        await _returnInventoryForOrder(orderItems, return_location_id);
+    }
+
+    return data;
 };
 
 // ============ Expenses ============
@@ -735,11 +905,13 @@ export const getRecentActivity = async () => {
     const [
         { data: sales },
         { data: batches },
-        { data: expenses }
+        { data: expenses },
+        { data: inventory }
     ] = await Promise.all([
         supabase.from('sales_orders').select('*').order('sale_date', { ascending: false }).limit(5),
         supabase.from('production_batches').select('*, recipe:recipes(name)').order('created_at', { ascending: false }).limit(5),
-        supabase.from('expenses').select('*').order('date', { ascending: false }).limit(5)
+        supabase.from('expenses').select('*').order('date', { ascending: false }).limit(5),
+        supabase.from('inventory_items').select('*, recipe:recipes(name), location:inventory_locations(name)').order('moved_at', { ascending: false }).limit(5)
     ]);
 
     const activities = [];
@@ -747,7 +919,7 @@ export const getRecentActivity = async () => {
     sales?.forEach(s => {
         activities.push({
             type: 'sale',
-            title: `Sale: $${s.total_amount.toFixed(2)}`,
+            title: `Sale: $${(s.total_amount || 0).toFixed(2)}`,
             date: s.sale_date,
             amount: s.total_amount
         });
@@ -766,11 +938,182 @@ export const getRecentActivity = async () => {
         activities.push({
             type: 'expense',
             title: `Expense: ${e.description}`,
-            subtitle: `$${e.amount.toFixed(2)}`,
+            subtitle: `$${(e.amount || 0).toFixed(2)}`,
             date: e.date,
             amount: e.amount
         });
     });
 
+    inventory?.forEach(i => {
+        activities.push({
+            type: 'inventory',
+            title: `Inventory: ${i.recipe?.name || 'Item'}`,
+            subtitle: `Moved to ${i.location?.name || 'Location'}`,
+            date: i.moved_at,
+            amount: i.quantity
+        });
+    });
+
     return activities.sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 10);
 };
+
+// ============ Inventory Locations ============
+
+export const getLocations = async () => {
+    ensureClient();
+    const { data, error } = await supabase
+        .from('inventory_locations')
+        .select('*')
+        .order('name');
+    if (error) handleError(error, 'get locations');
+    return data;
+};
+
+export const createLocation = async (locationData) => {
+    ensureClient();
+    const { data, error } = await supabase
+        .from('inventory_locations')
+        .insert(locationData)
+        .select()
+        .single();
+    if (error) handleError(error, 'create location');
+    return data;
+};
+
+export const updateLocation = async (id, locationData) => {
+    ensureClient();
+    const { data, error } = await supabase
+        .from('inventory_locations')
+        .update(locationData)
+        .eq('id', id)
+        .select()
+        .single();
+    if (error) handleError(error, 'update location');
+    return data;
+};
+
+export const deleteLocation = async (id) => {
+    ensureClient();
+    const { data, error } = await supabase
+        .from('inventory_locations')
+        .delete()
+        .eq('id', id);
+    if (error) handleError(error, 'delete location');
+    return data;
+};
+
+// ============ Inventory Items ============
+
+export const getInventoryItems = async (params = {}) => {
+    ensureClient();
+    let query = supabase
+        .from('inventory_items')
+        .select(`
+            *,
+            batch:production_batches(id, lot_number, production_date, cure_end_date, status),
+            location:inventory_locations(id, name, type),
+            recipe:recipes(id, name, default_price)
+        `);
+
+    if (params.location_id) {
+        query = query.eq('location_id', params.location_id);
+    }
+    if (params.recipe_id) {
+        query = query.eq('recipe_id', params.recipe_id);
+    }
+
+    const { data, error } = await query.order('moved_at', { ascending: true });
+    if (error) handleError(error, 'get inventory items');
+    return data;
+};
+
+export const moveToInventory = async ({ batch_id, location_id, recipe_id, quantity, notes }) => {
+    ensureClient();
+    const { data, error } = await supabase
+        .from('inventory_items')
+        .insert({ batch_id, location_id, recipe_id, quantity, notes })
+        .select(`
+            *,
+            batch:production_batches(id, lot_number),
+            location:inventory_locations(id, name)
+        `)
+        .single();
+    if (error) handleError(error, 'move to inventory');
+    return data;
+};
+
+export const updateInventoryItem = async (id, itemData) => {
+    ensureClient();
+    const { data, error } = await supabase
+        .from('inventory_items')
+        .update(itemData)
+        .eq('id', id)
+        .select()
+        .single();
+    if (error) handleError(error, 'update inventory item');
+    return data;
+};
+
+export const deleteInventoryItem = async (id) => {
+    ensureClient();
+    const { data, error } = await supabase
+        .from('inventory_items')
+        .delete()
+        .eq('id', id);
+    if (error) handleError(error, 'delete inventory item');
+    return data;
+};
+
+export const transferInventory = async (itemId, toLocationId, transferQty) => {
+    ensureClient();
+
+    // Get the current inventory item
+    const { data: item, error: fetchError } = await supabase
+        .from('inventory_items')
+        .select('*')
+        .eq('id', itemId)
+        .single();
+
+    if (fetchError) handleError(fetchError, 'fetch inventory item for transfer');
+
+    if (transferQty > item.quantity) {
+        throw new Error('Transfer quantity exceeds available stock');
+    }
+
+    if (transferQty === item.quantity) {
+        // Move entire lot to new location
+        const { data, error } = await supabase
+            .from('inventory_items')
+            .update({ location_id: toLocationId })
+            .eq('id', itemId)
+            .select()
+            .single();
+        if (error) handleError(error, 'transfer inventory (full)');
+        return data;
+    } else {
+        // Partial transfer: reduce source, create new lot at destination
+        const newQty = item.quantity - transferQty;
+        const { error: updateErr } = await supabase
+            .from('inventory_items')
+            .update({ quantity: newQty })
+            .eq('id', itemId);
+
+        if (updateErr) handleError(updateErr, 'reduce source inventory');
+
+        const { data: newItem, error: insertErr } = await supabase
+            .from('inventory_items')
+            .insert({
+                batch_id: item.batch_id,
+                location_id: toLocationId,
+                recipe_id: item.recipe_id,
+                quantity: transferQty,
+                notes: `Transferred from location`
+            })
+            .select()
+            .single();
+
+        if (insertErr) handleError(insertErr, 'create transferred inventory');
+        return newItem;
+    }
+};
+

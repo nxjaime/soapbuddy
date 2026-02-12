@@ -1,56 +1,56 @@
 import { useEffect, useState } from 'react';
 import {
-    ShoppingCart,
     Plus,
-    Search,
     ChevronDown,
     ChevronUp,
-    Package,
-    Calendar,
     DollarSign,
-    CheckCircle,
-    User,
     X,
-    Trash2
+    Trash2,
+    Edit3
 } from 'lucide-react';
 import {
     getSalesOrders,
     createSalesOrder,
+    updateSalesOrder,
     getCustomers,
-    getRecipes
+    getRecipes,
+    getLocations
 } from '../api/client';
 
 export default function SalesOrders() {
     const [orders, setOrders] = useState([]);
     const [customers, setCustomers] = useState([]);
-    const [recipes, setRecipes] = useState([]); // Used as Products
+    const [recipes, setRecipes] = useState([]);
+    const [locations, setLocations] = useState([]);
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [expandedOrder, setExpandedOrder] = useState(null);
+    const [editingOrder, setEditingOrder] = useState(null);
+    const [saving, setSaving] = useState(false);
 
-    // Form Data
     const [formData, setFormData] = useState({
         customer_id: '',
         status: 'Completed',
         payment_status: 'Paid',
+        source_location_id: '',
         items: []
     });
 
-    useEffect(() => {
-        loadData();
-    }, []);
+    useEffect(() => { loadData(); }, []);
 
     async function loadData() {
         try {
             setLoading(true);
-            const [ordersData, customersData, recipesData] = await Promise.all([
+            const [ordersData, customersData, recipesData, locationsData] = await Promise.all([
                 getSalesOrders(),
                 getCustomers(),
-                getRecipes()
+                getRecipes(),
+                getLocations()
             ]);
             setOrders(ordersData);
             setCustomers(customersData);
             setRecipes(recipesData);
+            setLocations(locationsData);
         } catch (err) {
             console.error('Failed to load data:', err);
         } finally {
@@ -58,24 +58,43 @@ export default function SalesOrders() {
         }
     }
 
-    function openModal() {
-        setFormData({
-            customer_id: '',
-            status: 'Completed',
-            payment_status: 'Paid',
-            items: []
-        });
+    function openModal(order = null) {
+        if (order) {
+            setEditingOrder(order);
+            setFormData({
+                customer_id: order.customer_id || '',
+                status: order.status || 'Completed',
+                payment_status: order.payment_status || 'Paid',
+                source_location_id: '',
+                items: order.items?.map(i => ({
+                    recipe_id: String(i.recipe_id),
+                    quantity: i.quantity,
+                    unit_price: i.unit_price,
+                    discount: i.discount || 0
+                })) || []
+            });
+        } else {
+            setEditingOrder(null);
+            setFormData({
+                customer_id: '',
+                status: 'Completed',
+                payment_status: 'Paid',
+                source_location_id: '',
+                items: []
+            });
+        }
         setIsModalOpen(true);
     }
 
     function closeModal() {
         setIsModalOpen(false);
+        setEditingOrder(null);
     }
 
     function addItemToOrder() {
         setFormData(prev => ({
             ...prev,
-            items: [...prev.items, { recipe_id: '', quantity: 1, unit_price: 0 }]
+            items: [...prev.items, { recipe_id: '', quantity: 1, unit_price: 0, discount: 0 }]
         }));
     }
 
@@ -101,31 +120,47 @@ export default function SalesOrders() {
             return;
         }
 
+        // Validate location for statuses that need inventory
+        if ((formData.status === 'Draft' || formData.status === 'Completed') && !editingOrder && !formData.source_location_id) {
+            alert("Please select a source location for inventory deduction.");
+            return;
+        }
+
+        setSaving(true);
         try {
             const payload = {
                 ...formData,
                 customer_id: formData.customer_id ? parseInt(formData.customer_id) : null,
-                total_amount: formData.items.reduce((sum, item) => sum + (parseFloat(item.unit_price || 0) * parseFloat(item.quantity || 1)), 0),
+                source_location_id: formData.source_location_id ? parseInt(formData.source_location_id) : null,
+                total_amount: formData.items.reduce(
+                    (sum, item) => sum + (parseFloat(item.unit_price || 0) * parseFloat(item.quantity || 1)) - parseFloat(item.discount || 0), 0
+                ),
                 items: formData.items.map(item => ({
-                    ...item,
                     recipe_id: parseInt(item.recipe_id),
                     quantity: parseInt(item.quantity),
-                    unit_price: parseFloat(item.unit_price)
+                    unit_price: parseFloat(item.unit_price),
+                    discount: parseFloat(item.discount || 0)
                 }))
             };
 
-            await createSalesOrder(payload);
+            if (editingOrder) {
+                await updateSalesOrder(editingOrder.id, payload);
+            } else {
+                await createSalesOrder(payload);
+            }
             closeModal();
             loadData();
         } catch (err) {
-            console.error('Failed to create order:', err);
-            alert('Failed to create order: ' + err.message);
+            console.error('Failed to save order:', err);
+            alert('Failed to save order: ' + err.message);
+        } finally {
+            setSaving(false);
         }
     }
 
     const getCustomerName = (id) => {
         const c = customers.find(cus => cus.id === id);
-        return c ? c.name : 'Unknown Customer';
+        return c ? c.name : 'Walk-in Customer';
     };
 
     const getRecipeName = (id) => {
@@ -137,6 +172,30 @@ export default function SalesOrders() {
         setExpandedOrder(expandedOrder === id ? null : id);
     };
 
+    const getStatusBadge = (status) => {
+        switch (status) {
+            case 'Completed': return 'badge-green';
+            case 'Draft': return 'badge-yellow';
+            case 'Cancelled': return 'badge-red';
+            default: return 'badge-blue';
+        }
+    };
+
+    // Check if the current edit is a status change that requires location
+    const needsSourceLocation = () => {
+        if (!editingOrder) return formData.status === 'Draft' || formData.status === 'Completed';
+        const oldStatus = editingOrder.status;
+        const newStatus = formData.status;
+        return (newStatus === 'Draft' || newStatus === 'Completed') && oldStatus !== 'Draft' && oldStatus !== 'Completed';
+    };
+
+    const needsReturnLocation = () => {
+        if (!editingOrder) return false;
+        const oldStatus = editingOrder.status;
+        const newStatus = formData.status;
+        return newStatus === 'Cancelled' && (oldStatus === 'Draft' || oldStatus === 'Completed');
+    };
+
     return (
         <div>
             <div className="page-header">
@@ -144,7 +203,7 @@ export default function SalesOrders() {
                     <DollarSign className="icon" />
                     Sales Orders
                 </h1>
-                <button className="btn btn-primary" onClick={openModal}>
+                <button className="btn btn-primary" onClick={() => openModal()}>
                     <Plus size={18} />
                     New Order
                 </button>
@@ -159,7 +218,7 @@ export default function SalesOrders() {
                     <DollarSign size={48} style={{ marginBottom: '16px', color: 'var(--text-muted)', opacity: 0.5 }} />
                     <h3>No sales orders found</h3>
                     <p>Record a sale to track your revenue.</p>
-                    <button className="btn btn-primary" onClick={openModal}>
+                    <button className="btn btn-primary" onClick={() => openModal()}>
                         <Plus size={18} />
                         New Order
                     </button>
@@ -184,7 +243,7 @@ export default function SalesOrders() {
                                         width: '40px',
                                         height: '40px',
                                         borderRadius: '50%',
-                                        background: 'var(--color-bg)',
+                                        background: 'var(--glass-bg)',
                                         display: 'flex',
                                         alignItems: 'center',
                                         justifyContent: 'center',
@@ -193,26 +252,34 @@ export default function SalesOrders() {
                                         <DollarSign size={20} />
                                     </div>
                                     <div>
-                                        <div style={{ fontWeight: 600 }}>{order.customer_id ? getCustomerName(order.customer_id) : 'Walk-in Customer'}</div>
+                                        <div style={{ fontWeight: 600 }}>{getCustomerName(order.customer_id)}</div>
                                         <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
                                             {new Date(order.sale_date).toLocaleDateString()}
                                         </div>
                                     </div>
                                 </div>
 
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-lg)' }}>
-                                    <div className={`badge ${order.status === 'Completed' ? 'badge-green' : 'badge-blue'}`}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-md)' }}>
+                                    <div className={`badge ${getStatusBadge(order.status)}`}>
                                         {order.status}
                                     </div>
                                     <div style={{ fontWeight: 600 }}>
-                                        ${order.total_amount.toFixed(2)}
+                                        ${(order.total_amount || 0).toFixed(2)}
                                     </div>
+                                    <button
+                                        className="btn-icon"
+                                        title="Edit Order"
+                                        onClick={(e) => { e.stopPropagation(); openModal(order); }}
+                                        style={{ color: 'var(--color-info)' }}
+                                    >
+                                        <Edit3 size={16} />
+                                    </button>
                                     {expandedOrder === order.id ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
                                 </div>
                             </div>
 
                             {expandedOrder === order.id && (
-                                <div style={{ padding: 'var(--spacing-md)', borderTop: '1px solid var(--glass-border)', background: 'rgba(0,0,0,0.2)' }}>
+                                <div style={{ padding: 'var(--spacing-md)', borderTop: '1px solid var(--glass-border)', background: 'rgba(0,0,0,0.1)' }}>
                                     <h4 style={{ fontSize: '0.9rem', marginBottom: 'var(--spacing-sm)', color: 'var(--text-secondary)' }}>Order Items</h4>
                                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem' }}>
                                         <thead>
@@ -224,7 +291,7 @@ export default function SalesOrders() {
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {order.items.map((item, idx) => (
+                                            {order.items?.map((item, idx) => (
                                                 <tr key={idx} style={{ borderTop: '1px solid var(--glass-border)' }}>
                                                     <td style={{ padding: '8px 0' }}>{getRecipeName(item.recipe_id)}</td>
                                                     <td style={{ padding: '8px 0' }}>{item.quantity}</td>
@@ -234,6 +301,11 @@ export default function SalesOrders() {
                                             ))}
                                         </tbody>
                                     </table>
+                                    {order.payment_status && (
+                                        <div style={{ marginTop: 'var(--spacing-sm)', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                                            Payment: <span className={`badge ${order.payment_status === 'Paid' ? 'badge-green' : 'badge-yellow'}`}>{order.payment_status}</span>
+                                        </div>
+                                    )}
                                 </div>
                             )}
                         </div>
@@ -241,12 +313,12 @@ export default function SalesOrders() {
                 </div>
             )}
 
-            {/* Create Order Modal */}
+            {/* Create / Edit Order Modal */}
             {isModalOpen && (
                 <div className="modal-overlay" onClick={closeModal}>
                     <div className="modal" style={{ maxWidth: '700px' }} onClick={(e) => e.stopPropagation()}>
                         <div className="modal-header">
-                            <h2 className="modal-title">New Sales Order</h2>
+                            <h2 className="modal-title">{editingOrder ? 'Edit Sales Order' : 'New Sales Order'}</h2>
                             <button className="btn-icon" onClick={closeModal}>
                                 <X size={20} />
                             </button>
@@ -277,9 +349,65 @@ export default function SalesOrders() {
                                             <option value="Draft">Draft</option>
                                             <option value="Confirmed">Confirmed</option>
                                             <option value="Completed">Completed</option>
+                                            <option value="Cancelled">Cancelled</option>
                                         </select>
                                     </div>
                                 </div>
+
+                                <div className="form-row">
+                                    <div className="form-group" style={{ flex: 1 }}>
+                                        <label className="form-label">Payment Status</label>
+                                        <select
+                                            className="form-input form-select"
+                                            value={formData.payment_status}
+                                            onChange={(e) => setFormData({ ...formData, payment_status: e.target.value })}
+                                        >
+                                            <option value="Unpaid">Unpaid</option>
+                                            <option value="Paid">Paid</option>
+                                            <option value="Partial">Partial</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                {/* Source location picker (when deducting inventory) */}
+                                {needsSourceLocation() && (
+                                    <div className="form-group" style={{ marginTop: 'var(--spacing-md)' }}>
+                                        <label className="form-label" style={{ color: 'var(--color-warning)' }}>
+                                            📦 Source Location (inventory will be deducted)
+                                        </label>
+                                        <select
+                                            className="form-input form-select"
+                                            value={formData.source_location_id}
+                                            onChange={(e) => setFormData({ ...formData, source_location_id: e.target.value })}
+                                            required
+                                        >
+                                            <option value="">Select Location...</option>
+                                            {locations.map(loc => (
+                                                <option key={loc.id} value={loc.id}>{loc.name}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                )}
+
+                                {/* Return location picker (when cancelling) */}
+                                {needsReturnLocation() && (
+                                    <div className="form-group" style={{ marginTop: 'var(--spacing-md)' }}>
+                                        <label className="form-label" style={{ color: 'var(--color-info)' }}>
+                                            ↩️ Return Location (inventory will be returned)
+                                        </label>
+                                        <select
+                                            className="form-input form-select"
+                                            value={formData.return_location_id || ''}
+                                            onChange={(e) => setFormData({ ...formData, return_location_id: e.target.value })}
+                                            required
+                                        >
+                                            <option value="">Select Location...</option>
+                                            {locations.map(loc => (
+                                                <option key={loc.id} value={loc.id}>{loc.name}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                )}
 
                                 <div style={{ marginTop: 'var(--spacing-lg)' }}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-sm)' }}>
@@ -349,14 +477,22 @@ export default function SalesOrders() {
                                             </button>
                                         </div>
                                     ))}
+
+                                    {formData.items.length > 0 && (
+                                        <div style={{ textAlign: 'right', marginTop: 'var(--spacing-sm)', fontWeight: 600, fontSize: '1.1rem' }}>
+                                            Total: ${formData.items.reduce(
+                                                (sum, item) => sum + (parseFloat(item.unit_price || 0) * parseFloat(item.quantity || 1)) - parseFloat(item.discount || 0), 0
+                                            ).toFixed(2)}
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                             <div className="modal-footer">
                                 <button type="button" className="btn btn-secondary" onClick={closeModal}>
                                     Cancel
                                 </button>
-                                <button type="submit" className="btn btn-primary">
-                                    Create Order
+                                <button type="submit" className="btn btn-primary" disabled={saving}>
+                                    {saving ? 'Saving...' : editingOrder ? 'Update Order' : 'Create Order'}
                                 </button>
                             </div>
                         </form>

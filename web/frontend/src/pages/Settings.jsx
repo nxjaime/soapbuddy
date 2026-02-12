@@ -8,12 +8,27 @@ import {
     User,
     Palette,
     Moon,
-    Sun
+    Sun,
+    LayoutDashboard,
+    FlaskConical,
+    BookOpen,
+    Factory,
+    Calculator,
+    Truck,
+    ShoppingCart,
+    Users,
+    DollarSign,
+    Receipt,
+    BarChart3,
+    FileSearch,
+    Warehouse,
+    PanelLeft,
+    Settings as SettingsIcon
 } from 'lucide-react';
 import { useSettings } from '../contexts/SettingsContext';
 
 export default function Settings() {
-    const { settings: globalSettings, updateSettings } = useSettings();
+    const { settings: globalSettings, updateSettings, toggleTab, isTabVisible } = useSettings();
     const [localSettings, setLocalSettings] = useState(globalSettings);
     const [saving, setSaving] = useState(false);
     const [saved, setSaved] = useState(false);
@@ -33,13 +48,28 @@ export default function Settings() {
     const handleSave = async (e) => {
         e.preventDefault();
         setSaving(true);
-        // Simulate API delay
         await new Promise(resolve => setTimeout(resolve, 800));
         updateSettings(localSettings);
         setSaving(false);
         setSaved(true);
         setTimeout(() => setSaved(false), 3000);
     };
+
+    // Tabs that can be toggled (excludes Dashboard and Settings which are always visible)
+    const toggleableTabs = [
+        { path: '/ingredients', icon: FlaskConical, label: 'Ingredients' },
+        { path: '/calculator', icon: Calculator, label: 'Calculator' },
+        { path: '/recipes', icon: BookOpen, label: 'Recipes' },
+        { path: '/production', icon: Factory, label: 'Production' },
+        { path: '/inventory', icon: Warehouse, label: 'Inventory' },
+        { path: '/suppliers', icon: Truck, label: 'Suppliers' },
+        { path: '/supply-orders', icon: ShoppingCart, label: 'Supply Orders' },
+        { path: '/customers', icon: Users, label: 'Customers' },
+        { path: '/sales-orders', icon: DollarSign, label: 'Sales Orders' },
+        { path: '/expenses', icon: Receipt, label: 'Expenses' },
+        { path: '/financials', icon: BarChart3, label: 'Financials' },
+        { path: '/traceability', icon: FileSearch, label: 'Traceability' },
+    ];
 
     if (!localSettings) return null;
 
@@ -202,6 +232,36 @@ export default function Settings() {
                                 <span>Email Alerts</span>
                             </label>
                         </div>
+                    </div>
+                </div>
+
+                {/* Sidebar Navigation - Full Width */}
+                <div className="card" style={{ padding: 'var(--spacing-lg)', marginTop: 'var(--spacing-lg)' }}>
+                    <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: 'var(--spacing-sm)' }}>
+                        <PanelLeft size={20} />
+                        Sidebar Navigation
+                    </h3>
+                    <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: 'var(--spacing-lg)' }}>
+                        Toggle which tabs are visible in the sidebar. Dashboard and Settings are always shown.
+                    </p>
+
+                    <div className="settings-tab-grid">
+                        {toggleableTabs.map(tab => (
+                            <div key={tab.path} className="settings-tab-item">
+                                <div className="settings-tab-info">
+                                    <tab.icon size={20} />
+                                    <span>{tab.label}</span>
+                                </div>
+                                <label className="toggle-switch">
+                                    <input
+                                        type="checkbox"
+                                        checked={isTabVisible(tab.path)}
+                                        onChange={() => toggleTab(tab.path)}
+                                    />
+                                    <span className="toggle-slider"></span>
+                                </label>
+                            </div>
+                        ))}
                     </div>
                 </div>
 

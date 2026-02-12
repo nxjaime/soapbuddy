@@ -55,12 +55,22 @@ export default function Production() {
         }
     }
 
-    function openModal() {
+    function generateJulianLot() {
         const now = new Date();
-        const lotNumber = `LOT-${now.getFullYear()}${(now.getMonth() + 1).toString().padStart(2, '0')}${now.getDate().toString().padStart(2, '0')}-${now.getTime().toString().slice(-4)}`;
+        const start = new Date(now.getFullYear(), 0, 0);
+        const diff = now - start;
+        const oneDay = 1000 * 60 * 60 * 24;
+        const dayOfYear = Math.floor(diff / oneDay);
+        const yy = now.getFullYear().toString().slice(-2);
+        const ddd = dayOfYear.toString().padStart(3, '0');
+        const seq = now.getTime().toString().slice(-4);
+        return `${yy}${ddd}-${seq}`;
+    }
+
+    function openModal() {
         setFormData({
             recipe_id: recipes.length > 0 ? recipes[0].id : '',
-            lot_number: lotNumber,
+            lot_number: generateJulianLot(),
             scale_factor: 1.0,
             total_weight: 0,
             status: 'Planned',
@@ -92,23 +102,31 @@ export default function Production() {
         }
     }
 
+    const [updatingId, setUpdatingId] = useState(null);
+
     async function handleStatusChange(batchId, newStatus) {
         try {
+            setUpdatingId(batchId);
             const updateData = { status: newStatus };
             if (newStatus === 'In Progress') {
                 updateData.production_date = new Date().toISOString();
             } else if (newStatus === 'Complete') {
                 const yieldQty = prompt("Enter number of units produced (Yield):", "0");
-                if (yieldQty === null) return; // Cancelled
+                if (yieldQty === null) {
+                    setUpdatingId(null);
+                    return; // Cancelled
+                }
                 updateData.yield_quantity = parseInt(yieldQty) || 0;
-                updateData.cure_end_date = new Date().toISOString(); // Auto - set cure start / end ? Maybe just finish logic.
+                updateData.cure_end_date = new Date().toISOString();
             }
 
             await updateBatch(batchId, updateData);
-            loadBatches();
+            await loadBatches();
         } catch (err) {
             console.error('Failed to update batch:', err);
             alert('Failed to update batch: ' + err.message);
+        } finally {
+            setUpdatingId(null);
         }
     }
 
@@ -245,9 +263,10 @@ export default function Production() {
                                         <td>
                                             <select
                                                 className="form-input form-select"
-                                                style={{ width: '140px', padding: '4px 8px' }}
+                                                style={{ width: '140px', padding: '4px 8px', opacity: updatingId === batch.id ? 0.5 : 1 }}
                                                 value={batch.status}
                                                 onChange={(e) => handleStatusChange(batch.id, e.target.value)}
+                                                disabled={updatingId === batch.id}
                                             >
                                                 {STATUS_OPTIONS.map(status => (
                                                     <option key={status} value={status}>{status}</option>

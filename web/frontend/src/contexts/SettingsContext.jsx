@@ -16,7 +16,8 @@ export function SettingsProvider({ children }) {
         theme: 'dark',
         lowStockThreshold: 10,
         enableNotifications: true,
-        emailAlerts: false
+        emailAlerts: false,
+        hiddenTabs: []
     });
 
     useEffect(() => {
@@ -26,7 +27,7 @@ export function SettingsProvider({ children }) {
                 const parsed = JSON.parse(savedSettings);
                 // Ensure currency symbol is set
                 const currencySymbol = getCurrencySymbol(parsed.currency || 'USD');
-                setSettings({ ...parsed, currencySymbol });
+                setSettings({ ...parsed, currencySymbol, hiddenTabs: parsed.hiddenTabs || [] });
             } catch (e) {
                 console.error('Failed to parse settings', e);
             }
@@ -45,6 +46,18 @@ export function SettingsProvider({ children }) {
         localStorage.setItem('soapManager_settings', JSON.stringify(updated));
     };
 
+    const toggleTab = (tabPath) => {
+        const hidden = settings.hiddenTabs || [];
+        const newHidden = hidden.includes(tabPath)
+            ? hidden.filter(t => t !== tabPath)
+            : [...hidden, tabPath];
+        updateSettings({ hiddenTabs: newHidden });
+    };
+
+    const isTabVisible = (tabPath) => {
+        return !(settings.hiddenTabs || []).includes(tabPath);
+    };
+
     const getCurrencySymbol = (currencyCode) => {
         switch (currencyCode) {
             case 'EUR': return '€';
@@ -58,9 +71,12 @@ export function SettingsProvider({ children }) {
         <SettingsContext.Provider value={{
             settings,
             updateSettings,
+            toggleTab,
+            isTabVisible,
             formatCurrency: (amount) => `${settings.currencySymbol}${Number(amount).toFixed(2)}`
         }}>
             {children}
         </SettingsContext.Provider>
     );
 }
+

@@ -2,20 +2,17 @@ import { useEffect, useState } from 'react';
 import {
     ShoppingCart,
     Plus,
-    Search,
     ChevronDown,
     ChevronUp,
     Package,
-    Calendar,
-    DollarSign,
-    CheckCircle,
-    Clock,
     X,
-    Trash2
+    Trash2,
+    Edit3
 } from 'lucide-react';
 import {
     getSupplyOrders,
     createSupplyOrder,
+    updateSupplyOrder,
     getSuppliers,
     getIngredients
 } from '../api/client';
@@ -27,17 +24,16 @@ export default function SupplyOrders() {
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [expandedOrder, setExpandedOrder] = useState(null);
+    const [editingOrder, setEditingOrder] = useState(null);
+    const [saving, setSaving] = useState(false);
 
-    // Form Data
     const [formData, setFormData] = useState({
         supplier_id: '',
         status: 'Ordered',
         items: []
     });
 
-    useEffect(() => {
-        loadData();
-    }, []);
+    useEffect(() => { loadData(); }, []);
 
     async function loadData() {
         try {
@@ -57,17 +53,33 @@ export default function SupplyOrders() {
         }
     }
 
-    function openModal() {
-        setFormData({
-            supplier_id: '',
-            status: 'Ordered',
-            items: []
-        });
+    function openModal(order = null) {
+        if (order) {
+            setEditingOrder(order);
+            setFormData({
+                supplier_id: String(order.supplier_id || ''),
+                status: order.status || 'Ordered',
+                items: order.items?.map(i => ({
+                    ingredient_id: String(i.ingredient_id),
+                    quantity: i.quantity,
+                    unit: i.unit || 'g',
+                    cost: i.cost
+                })) || []
+            });
+        } else {
+            setEditingOrder(null);
+            setFormData({
+                supplier_id: '',
+                status: 'Ordered',
+                items: []
+            });
+        }
         setIsModalOpen(true);
     }
 
     function closeModal() {
         setIsModalOpen(false);
+        setEditingOrder(null);
     }
 
     function addItemToOrder() {
@@ -99,6 +111,7 @@ export default function SupplyOrders() {
             return;
         }
 
+        setSaving(true);
         try {
             const payload = {
                 ...formData,
@@ -112,12 +125,18 @@ export default function SupplyOrders() {
                 }))
             };
 
-            await createSupplyOrder(payload);
+            if (editingOrder) {
+                await updateSupplyOrder(editingOrder.id, payload);
+            } else {
+                await createSupplyOrder(payload);
+            }
             closeModal();
             loadData();
         } catch (err) {
-            console.error('Failed to create order:', err);
-            alert('Failed to create order: ' + err.message);
+            console.error('Failed to save order:', err);
+            alert('Failed to save order: ' + err.message);
+        } finally {
+            setSaving(false);
         }
     }
 
@@ -135,6 +154,15 @@ export default function SupplyOrders() {
         setExpandedOrder(expandedOrder === id ? null : id);
     };
 
+    const getStatusBadge = (status) => {
+        switch (status) {
+            case 'Received': return 'badge-green';
+            case 'Shipped': return 'badge-yellow';
+            case 'Cancelled': return 'badge-red';
+            default: return 'badge-blue';
+        }
+    };
+
     return (
         <div>
             <div className="page-header">
@@ -142,7 +170,7 @@ export default function SupplyOrders() {
                     <ShoppingCart className="icon" />
                     Supply Orders
                 </h1>
-                <button className="btn btn-primary" onClick={openModal}>
+                <button className="btn btn-primary" onClick={() => openModal()}>
                     <Plus size={18} />
                     New Order
                 </button>
@@ -157,7 +185,7 @@ export default function SupplyOrders() {
                     <ShoppingCart size={48} style={{ marginBottom: '16px', color: 'var(--text-muted)', opacity: 0.5 }} />
                     <h3>No orders found</h3>
                     <p>Create a purchase order to restock your inventory.</p>
-                    <button className="btn btn-primary" onClick={openModal}>
+                    <button className="btn btn-primary" onClick={() => openModal()}>
                         <Plus size={18} />
                         New Order
                     </button>
@@ -182,7 +210,7 @@ export default function SupplyOrders() {
                                         width: '40px',
                                         height: '40px',
                                         borderRadius: '50%',
-                                        background: 'var(--color-bg)',
+                                        background: 'var(--glass-bg)',
                                         display: 'flex',
                                         alignItems: 'center',
                                         justifyContent: 'center',
@@ -198,19 +226,27 @@ export default function SupplyOrders() {
                                     </div>
                                 </div>
 
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-lg)' }}>
-                                    <div className={`badge ${order.status === 'Received' ? 'badge-green' : 'badge-blue'}`}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-md)' }}>
+                                    <div className={`badge ${getStatusBadge(order.status)}`}>
                                         {order.status}
                                     </div>
                                     <div style={{ fontWeight: 600 }}>
-                                        ${order.total_cost.toFixed(2)}
+                                        ${(order.total_cost || 0).toFixed(2)}
                                     </div>
+                                    <button
+                                        className="btn-icon"
+                                        title="Edit Order"
+                                        onClick={(e) => { e.stopPropagation(); openModal(order); }}
+                                        style={{ color: 'var(--color-info)' }}
+                                    >
+                                        <Edit3 size={16} />
+                                    </button>
                                     {expandedOrder === order.id ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
                                 </div>
                             </div>
 
                             {expandedOrder === order.id && (
-                                <div style={{ padding: 'var(--spacing-md)', borderTop: '1px solid var(--glass-border)', background: 'rgba(0,0,0,0.2)' }}>
+                                <div style={{ padding: 'var(--spacing-md)', borderTop: '1px solid var(--glass-border)', background: 'rgba(0,0,0,0.1)' }}>
                                     <h4 style={{ fontSize: '0.9rem', marginBottom: 'var(--spacing-sm)', color: 'var(--text-secondary)' }}>Order Items</h4>
                                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem' }}>
                                         <thead>
@@ -221,11 +257,11 @@ export default function SupplyOrders() {
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {order.items.map((item, idx) => (
+                                            {order.items?.map((item, idx) => (
                                                 <tr key={idx} style={{ borderTop: '1px solid var(--glass-border)' }}>
                                                     <td style={{ padding: '8px 0' }}>{getIngredientName(item.ingredient_id)}</td>
                                                     <td style={{ padding: '8px 0' }}>{item.quantity} {item.unit}</td>
-                                                    <td style={{ padding: '8px 0', textAlign: 'right' }}>${item.cost.toFixed(2)}</td>
+                                                    <td style={{ padding: '8px 0', textAlign: 'right' }}>${(item.cost || 0).toFixed(2)}</td>
                                                 </tr>
                                             ))}
                                         </tbody>
@@ -237,12 +273,12 @@ export default function SupplyOrders() {
                 </div>
             )}
 
-            {/* Create Order Modal */}
+            {/* Create / Edit Order Modal */}
             {isModalOpen && (
                 <div className="modal-overlay" onClick={closeModal}>
                     <div className="modal" style={{ maxWidth: '700px' }} onClick={(e) => e.stopPropagation()}>
                         <div className="modal-header">
-                            <h2 className="modal-title">New Supply Order</h2>
+                            <h2 className="modal-title">{editingOrder ? 'Edit Supply Order' : 'New Supply Order'}</h2>
                             <button className="btn-icon" onClick={closeModal}>
                                 <X size={20} />
                             </button>
@@ -274,6 +310,7 @@ export default function SupplyOrders() {
                                             <option value="Ordered">Ordered</option>
                                             <option value="Shipped">Shipped</option>
                                             <option value="Received">Received</option>
+                                            <option value="Cancelled">Cancelled</option>
                                         </select>
                                     </div>
                                 </div>
@@ -343,14 +380,20 @@ export default function SupplyOrders() {
                                             </button>
                                         </div>
                                     ))}
+
+                                    {formData.items.length > 0 && (
+                                        <div style={{ textAlign: 'right', marginTop: 'var(--spacing-sm)', fontWeight: 600, fontSize: '1.1rem' }}>
+                                            Total: ${formData.items.reduce((sum, item) => sum + parseFloat(item.cost || 0), 0).toFixed(2)}
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                             <div className="modal-footer">
                                 <button type="button" className="btn btn-secondary" onClick={closeModal}>
                                     Cancel
                                 </button>
-                                <button type="submit" className="btn btn-primary">
-                                    Create Order
+                                <button type="submit" className="btn btn-primary" disabled={saving}>
+                                    {saving ? 'Saving...' : editingOrder ? 'Update Order' : 'Create Order'}
                                 </button>
                             </div>
                         </form>

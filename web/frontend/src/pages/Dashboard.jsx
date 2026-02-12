@@ -13,6 +13,7 @@ import {
     ShoppingCart,
     Truck,
     Package,
+    Warehouse,
     ArrowUpRight,
     ArrowDownRight,
     Activity,
@@ -285,31 +286,43 @@ export default function Dashboard() {
                         </div>
                     ) : (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-sm)', marginTop: 'var(--spacing-md)' }}>
-                            {recentActivity.map((activity, idx) => (
-                                <div key={idx} style={{
-                                    display: 'flex', alignItems: 'center', gap: 'var(--spacing-md)',
-                                    padding: 'var(--spacing-sm)',
-                                    background: 'var(--glass-bg)',
-                                    borderRadius: 'var(--radius-sm)'
-                                }}>
-                                    <div style={{
-                                        width: '32px', height: '32px', borderRadius: '50%',
-                                        background: `${activity.color}22`,
-                                        display: 'flex', alignItems: 'center', justifyContent: 'center'
+                            {recentActivity.map((activity, idx) => {
+                                const activityConfig = {
+                                    sale: { icon: DollarSign, color: 'var(--color-success)' },
+                                    batch: { icon: Factory, color: 'var(--color-primary)' },
+                                    expense: { icon: ScrollText, color: 'var(--color-error)' },
+                                    inventory: { icon: Warehouse, color: 'var(--color-primary-light)' },
+                                    default: { icon: Activity, color: 'var(--text-muted)' }
+                                };
+                                const config = activityConfig[activity.type] || activityConfig.default;
+                                const Icon = config.icon;
+
+                                return (
+                                    <div key={idx} style={{
+                                        display: 'flex', alignItems: 'center', gap: 'var(--spacing-md)',
+                                        padding: 'var(--spacing-sm)',
+                                        background: 'var(--glass-bg)',
+                                        borderRadius: 'var(--radius-sm)'
                                     }}>
-                                        <activity.icon size={16} style={{ color: activity.color }} />
+                                        <div style={{
+                                            width: '32px', height: '32px', borderRadius: '50%',
+                                            background: `${config.color}22`,
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                        }}>
+                                            <Icon size={16} style={{ color: config.color }} />
+                                        </div>
+                                        <div style={{ flex: 1 }}>
+                                            <div style={{ fontWeight: 500, fontSize: '0.9rem' }}>{activity.title}</div>
+                                            {activity.subtitle && (
+                                                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{activity.subtitle}</div>
+                                            )}
+                                        </div>
+                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                                            {new Date(activity.date).toLocaleDateString()}
+                                        </div>
                                     </div>
-                                    <div style={{ flex: 1 }}>
-                                        <div style={{ fontWeight: 500, fontSize: '0.9rem' }}>{activity.title}</div>
-                                        {activity.subtitle && (
-                                            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{activity.subtitle}</div>
-                                        )}
-                                    </div>
-                                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                                        {new Date(activity.date).toLocaleDateString()}
-                                    </div>
-                                </div>
-                            ))}
+                                );
+                            })}
                         </div>
                     )}
                 </div>

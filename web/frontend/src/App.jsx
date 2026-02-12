@@ -7,6 +7,7 @@ import Dashboard from './pages/Dashboard'
 import Ingredients from './pages/Ingredients'
 import Recipes from './pages/Recipes'
 import Production from './pages/Production'
+import Inventory from './pages/Inventory'
 
 import Calculator from './pages/Calculator'
 import Suppliers from './pages/Suppliers'
@@ -36,6 +37,7 @@ function App() {
             <Route path="ingredients" element={<Ingredients />} />
             <Route path="recipes" element={<Recipes />} />
             <Route path="production" element={<Production />} />
+            <Route path="inventory" element={<Inventory />} />
 
             <Route path="calculator" element={<Calculator />} />
             <Route path="suppliers" element={<Suppliers />} />
