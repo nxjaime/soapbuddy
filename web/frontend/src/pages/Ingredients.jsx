@@ -38,6 +38,8 @@ export default function Ingredients() {
     const [searchTerm, setSearchTerm] = useState('');
     const [categoryFilter, setCategoryFilter] = useState('');
     const [isScannerOpen, setIsScannerOpen] = useState(false);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [editingIngredient, setEditingIngredient] = useState(null);
     const [formData, setFormData] = useState({
         name: '',
         category: 'Base Oil',
