@@ -216,20 +216,24 @@ body {
 /* ============ Layout ============ */
 .app-layout {
   display: flex;
+  flex-direction: column;
   min-height: 100vh;
 }
 
 .sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
   width: 260px;
+  height: 100vh;
   background: var(--bg-secondary);
   border-right: 1px solid var(--glass-border);
   padding: var(--spacing-lg);
   display: flex;
   flex-direction: column;
-  position: fixed;
-  height: 100vh;
-  z-index: 100;
+  z-index: 1000;
   overflow-y: auto;
+  transition: transform 0.3s ease;
 }
 
 .sidebar-header {
@@ -317,11 +321,54 @@ body {
   height: 20px;
 }
 
+/* Sidebar overlay for mobile */
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+}
+
+/* Mobile header - hidden on desktop */
+.mobile-header {
+  display: none;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md) var(--spacing-lg);
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--glass-border);
+  position: sticky;
+  top: 0;
+  z-index: 800;
+}
+
+.menu-btn {
+  background: none;
+  border: none;
+  color: var(--text-primary);
+  cursor: pointer;
+  padding: var(--spacing-xs);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.close-btn {
+  display: none;
+  background: none;
+  border: none;
+  color: var(--text-primary);
+  cursor: pointer;
+  padding: var(--spacing-xs);
+}
+
 .main-content {
   flex: 1;
   margin-left: 260px;
   padding: var(--spacing-xl);
   min-height: 100vh;
+  min-width: 0;
 }
 
 /* ============ Page Header ============ */
@@ -641,22 +688,6 @@ body {
   align-items: center;
 }
 
-@media (max-width: 768px) {
-  .responsive-grid {
-    grid-template-columns: 1fr;
-    gap: var(--spacing-md);
-  }
-
-  .flex-stack {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .hide-on-mobile {
-    display: none !important;
-  }
-}
-
 /* ============ Modal ============ */
 .modal-overlay {
   position: fixed;
@@ -918,7 +949,7 @@ body {
   vertical-align: middle;
 }
 
-/* ============ Responsive ============ */
+/* ============ Tablet Responsive (1200px) ============ */
 @media (max-width: 1200px) {
   .calc-grid {
     grid-template-columns: 1fr 1fr;
@@ -930,7 +961,125 @@ body {
   }
 }
 
+/* ============ Mobile Responsive (768px) ============ */
 @media (max-width: 768px) {
+  /* --- Layout: Sidebar & Main --- */
+  .sidebar {
+    transform: translateX(-100%);
+  }
+
+  .sidebar.open {
+    transform: translateX(0);
+  }
+
+  .sidebar-overlay {
+    display: block;
+  }
+
+  .mobile-header {
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .close-btn {
+    display: block;
+    margin-left: auto;
+  }
+
+  .sidebar-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .main-content {
+    margin-left: 0;
+    padding: var(--spacing-md);
+  }
+
+  /* --- Page Header --- */
+  .page-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--spacing-md);
+  }
+
+  .page-title {
+    font-size: 1.25rem;
+  }
+
+  /* --- Utility Classes --- */
+  .responsive-grid {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-md);
+  }
+
+  .flex-stack {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .flex-responsive {
+    gap: var(--spacing-sm);
+  }
+
+  .hide-on-mobile {
+    display: none !important;
+  }
+
+  /* --- Forms --- */
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+
+  /* --- Modal --- */
+  .modal {
+    width: calc(100% - var(--spacing-md));
+    max-width: 100%;
+    max-height: 90vh;
+    margin: var(--spacing-sm);
+  }
+
+  .modal-body {
+    padding: var(--spacing-md);
+  }
+
+  .modal-header,
+  .modal-footer {
+    padding: var(--spacing-md);
+  }
+
+  .modal-footer {
+    flex-wrap: wrap;
+  }
+
+  /* --- Tables --- */
+  .data-table th,
+  .data-table td {
+    padding: var(--spacing-sm) var(--spacing-sm);
+    font-size: 0.8rem;
+  }
+
+  .data-table td {
+    white-space: normal;
+    word-break: break-word;
+  }
+
+  /* --- Stats --- */
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--spacing-sm);
+  }
+
+  .stat-card {
+    padding: var(--spacing-md);
+  }
+
+  .stat-value {
+    font-size: 1.25rem;
+  }
+
+  /* --- Calculator --- */
   .calc-grid {
     grid-template-columns: 1fr;
     grid-template-areas:
@@ -942,148 +1091,35 @@ body {
       "section5"
       "section7";
   }
-}
-
-/* Update Sidebar and Main Content for Mobile */
-
-/* Default Desktop Styles */
-.sidebar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 260px;
-  height: 100vh;
-  background: var(--bg-secondary);
-  border-right: 1px solid var(--glass-border);
-  z-index: 1000;
-  transition: transform 0.3s ease;
-  display: flex;
-  flex-direction: column;
-}
-
-.main-content {
-  margin-left: 260px;
-  padding: var(--spacing-xl);
-  transition: margin-left 0.3s ease;
-}
-
-.sidebar-overlay {
-  display: none;
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.5);
-  z-index: 900;
-}
-
-.mobile-header {
-  display: none;
-  align-items: center;
-  padding: var(--spacing-md);
-  background: var(--bg-secondary);
-  border-bottom: 1px solid var(--glass-border);
-  position: relative;
-  z-index: 800;
-}
-
-.menu-btn {
-  background: none;
-  border: none;
-  color: var(--text-primary);
-  cursor: pointer;
-  padding: var(--spacing-sm);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.close-btn {
-  display: none;
-  /* Hidden on desktop */
-  background: none;
-  border: none;
-  color: var(--text-primary);
-  cursor: pointer;
-}
-
-
-/* Mobile Responsive Styles */
-@media (max-width: 768px) {
-  .sidebar {
-    transform: translateX(-100%);
-  }
-
-  .sidebar.open {
-    transform: translateX(0);
-  }
-
-  .main-content {
-    margin-left: 0;
-    padding: var(--spacing-md);
-  }
-
-  .mobile-header {
-    display: flex;
-    justify-content: space-between;
-  }
-
-  .sidebar-overlay {
-    display: block;
-    /* Only show when sidebar creates overlay context, handled by React conditional rendering but CSS can control opacity */
-  }
-
-  .close-btn {
-    display: block;
-    /* Show on mobile inside sidebar header */
-    margin-left: auto;
-  }
-
-  /* Adjust sidebar header for mobile */
-  .sidebar-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding-right: var(--spacing-md);
-  }
-
-  .page-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: var(--spacing-md);
-  }
-
-  .page-header .btn,
-  .page-header .btn-group {
-    width: 100%;
-  }
-
-  .form-row {
-    grid-template-columns: 1fr;
-  }
-
-  .modal {
-    width: calc(100% - var(--spacing-lg));
-    max-height: 95vh;
-  }
-
-  .data-table th,
-  .data-table td {
-    padding: var(--spacing-sm) var(--spacing-md);
-  }
-
-  .stats-grid {
-    grid-template-columns: 1fr;
-  }
 
   .calculator-layout {
     grid-template-columns: 1fr;
-    gap: var(--spacing-lg);
+    gap: var(--spacing-md);
   }
 
   .calculator-results {
     position: static;
+  }
+
+  /* --- Buttons --- */
+  .btn {
+    padding: var(--spacing-sm) var(--spacing-md);
+    font-size: 0.8rem;
+  }
+
+  /* --- Cards --- */
+  .card {
+    padding: var(--spacing-md);
+  }
+
+  .card:hover {
+    transform: none;
+  }
+
+  /* --- Badges --- */
+  .badge {
+    font-size: 0.65rem;
+    padding: 0.1rem 0.4rem;
   }
 }
 
