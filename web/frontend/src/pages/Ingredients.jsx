@@ -6,8 +6,11 @@ import {
     Edit2,
     Trash2,
     X,
-    Package
+    Package,
+    Barcode,
+    Camera
 } from 'lucide-react';
+import BarcodeScanner from '../components/BarcodeScanner';
 import {
     getIngredients,
     createIngredient,
@@ -34,11 +37,11 @@ export default function Ingredients() {
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [categoryFilter, setCategoryFilter] = useState('');
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [editingIngredient, setEditingIngredient] = useState(null);
+    const [isScannerOpen, setIsScannerOpen] = useState(false);
     const [formData, setFormData] = useState({
         name: '',
         category: 'Base Oil',
+        barcode: '',
         inci_code: '',
         sap_naoh: '',
         sap_koh: '',
@@ -74,6 +77,7 @@ export default function Ingredients() {
             setFormData({
                 name: ingredient.name,
                 category: ingredient.category,
+                barcode: ingredient.barcode || '',
                 inci_code: ingredient.inci_code || '',
                 sap_naoh: ingredient.sap_naoh || '',
                 sap_koh: ingredient.sap_koh || '',
@@ -88,6 +92,7 @@ export default function Ingredients() {
             setFormData({
                 name: '',
                 category: 'Base Oil',
+                barcode: '',
                 inci_code: '',
                 sap_naoh: '',
                 sap_koh: '',
@@ -146,6 +151,37 @@ export default function Ingredients() {
         setFormData(prev => ({ ...prev, [name]: value }));
     }
 
+    const handleBarcodeScan = async (result) => {
+        setIsScannerOpen(false);
+
+        // Search for existing ingredient with this barcode
+        const existing = ingredients.find(ing => ing.barcode === result.barcode);
+
+        if (existing) {
+            if (confirm(`Ingredient "${existing.name}" already exists with this barcode. Would you like to edit it?`)) {
+                openModal(existing);
+                return;
+            }
+        }
+
+        // Open modal with pre-filled data
+        setEditingIngredient(null);
+        setFormData({
+            name: result.name || '',
+            category: 'Other', // Lookups might not provide category easily
+            barcode: result.barcode,
+            inci_code: result.inci || '',
+            sap_naoh: '',
+            sap_koh: '',
+            unit: 'g',
+            quantity_on_hand: 0,
+            cost_per_unit: 0,
+            supplier: result.brand || '',
+            notes: ''
+        });
+        setIsModalOpen(true);
+    };
+
     const getCategoryBadge = (category) => {
         const colors = {
             'Base Oil': 'badge-purple',
@@ -168,15 +204,21 @@ export default function Ingredients() {
                     <FlaskConical className="icon" />
                     Ingredients
                 </h1>
-                <button className="btn btn-primary" onClick={() => openModal()}>
-                    <Plus size={18} />
-                    Add Ingredient
-                </button>
+                <div className="flex-responsive">
+                    <button className="btn btn-secondary" onClick={() => setIsScannerOpen(true)}>
+                        <Barcode size={18} />
+                        Scan
+                    </button>
+                    <button className="btn btn-primary" onClick={() => openModal()}>
+                        <Plus size={18} />
+                        Add
+                    </button>
+                </div>
             </div>
 
             {/* Filters */}
-            <div style={{ display: 'flex', gap: 'var(--spacing-md)', marginBottom: 'var(--spacing-lg)' }}>
-                <div style={{ position: 'relative', flex: 1, maxWidth: '300px' }}>
+            <div className="flex-responsive" style={{ marginBottom: 'var(--spacing-lg)' }}>
+                <div style={{ position: 'relative', flex: 1, minWidth: '240px' }}>
                     <Search
                         style={{
                             position: 'absolute',
@@ -198,7 +240,7 @@ export default function Ingredients() {
                 </div>
                 <select
                     className="form-input form-select"
-                    style={{ width: '200px' }}
+                    style={{ width: 'auto', flex: '0 1 200px' }}
                     value={categoryFilter}
                     onChange={(e) => setCategoryFilter(e.target.value)}
                 >
@@ -230,11 +272,11 @@ export default function Ingredients() {
                         <thead>
                             <tr>
                                 <th>Name</th>
-                                <th>Category</th>
-                                <th>SAP (NaOH)</th>
+                                <th className="hide-on-mobile">Category</th>
+                                <th className="hide-on-mobile">SAP (NaOH)</th>
                                 <th>Stock</th>
-                                <th>Cost/Unit</th>
-                                <th>Supplier</th>
+                                <th className="hide-on-mobile">Cost/Unit</th>
+                                <th className="hide-on-mobile">Supplier</th>
                                 <th style={{ width: '100px' }}>Actions</th>
                             </tr>
                         </thead>
@@ -251,19 +293,19 @@ export default function Ingredients() {
                                             )}
                                         </div>
                                     </td>
-                                    <td>
+                                    <td className="hide-on-mobile">
                                         <span className={`badge ${getCategoryBadge(ing.category)}`}>
                                             {ing.category}
                                         </span>
                                     </td>
-                                    <td>{ing.sap_naoh || '-'}</td>
+                                    <td className="hide-on-mobile">{ing.sap_naoh || '-'}</td>
                                     <td>
-                                        <span style={{ color: ing.quantity_on_hand < 100 ? 'var(--color-error)' : 'inherit' }}>
+                                        <span style={{ color: ing.quantity_on_hand < 100 ? 'var(--color-error)' : 'inherit', fontWeight: 600 }}>
                                             {ing.quantity_on_hand} {ing.unit}
                                         </span>
                                     </td>
-                                    <td>${ing.cost_per_unit.toFixed(2)}/{ing.unit}</td>
-                                    <td>{ing.supplier || '-'}</td>
+                                    <td className="hide-on-mobile">${ing.cost_per_unit.toFixed(2)}/{ing.unit}</td>
+                                    <td className="hide-on-mobile">{ing.supplier || '-'}</td>
                                     <td>
                                         <div style={{ display: 'flex', gap: 'var(--spacing-xs)' }}>
                                             <button className="btn-icon" onClick={() => openModal(ing)}>
@@ -324,6 +366,29 @@ export default function Ingredients() {
                                                 <option key={cat} value={cat}>{cat}</option>
                                             ))}
                                         </select>
+                                    </div>
+                                </div>
+
+                                <div className="form-group">
+                                    <label className="form-label">Barcode</label>
+                                    <div style={{ display: 'flex', gap: 'var(--spacing-sm)' }}>
+                                        <input
+                                            type="text"
+                                            name="barcode"
+                                            className="form-input"
+                                            value={formData.barcode}
+                                            onChange={handleInputChange}
+                                            placeholder="Scan or enter barcode"
+                                            style={{ flex: 1 }}
+                                        />
+                                        <button
+                                            type="button"
+                                            className="btn btn-secondary btn-icon"
+                                            onClick={() => setIsScannerOpen(true)}
+                                            style={{ padding: '0 12px' }}
+                                        >
+                                            <Barcode size={18} />
+                                        </button>
                                     </div>
                                 </div>
 
@@ -439,6 +504,14 @@ export default function Ingredients() {
                         </form>
                     </div>
                 </div>
+            )}
+
+            {/* Barcode Scanner Modal */}
+            {isScannerOpen && (
+                <BarcodeScanner
+                    onScan={handleBarcodeScan}
+                    onClose={() => setIsScannerOpen(false)}
+                />
             )}
         </div>
     );

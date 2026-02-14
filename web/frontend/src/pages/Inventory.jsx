@@ -266,20 +266,20 @@ export default function Inventory() {
                     <Warehouse className="icon" />
                     Inventory
                 </h1>
-                <div style={{ display: 'flex', gap: 'var(--spacing-sm)' }}>
+                <div className="flex-responsive">
                     <button className="btn btn-secondary" onClick={() => setActiveTab(activeTab === 'inventory' ? 'locations' : 'inventory')}>
                         <MapPin size={18} />
-                        {activeTab === 'inventory' ? 'Manage Locations' : 'View Inventory'}
+                        <span className="hide-on-mobile">{activeTab === 'inventory' ? 'Locations' : 'Inventory'}</span>
                     </button>
                     {activeTab === 'inventory' ? (
-                        <div style={{ display: 'flex', gap: 'var(--spacing-sm)' }}>
+                        <div className="flex-responsive" style={{ gap: 'var(--spacing-sm)' }}>
                             <button className="btn btn-secondary" onClick={() => openTransferModal()} disabled={inventoryItems.length === 0 || locations.length < 2}>
                                 <ArrowRightLeft size={18} />
-                                Transfer
+                                <span className="hide-on-mobile">Transfer</span>
                             </button>
                             <button className="btn btn-primary" onClick={openMoveModal} disabled={completedBatches.length === 0 || locations.length === 0}>
                                 <Plus size={18} />
-                                Move to Inventory
+                                Move
                             </button>
                         </div>
                     ) : (
@@ -321,7 +321,7 @@ export default function Inventory() {
             {activeTab === 'inventory' && (
                 <>
                     {/* Filters */}
-                    <div className="card" style={{ padding: 'var(--spacing-md)', marginBottom: 'var(--spacing-lg)', display: 'flex', gap: 'var(--spacing-md)', flexWrap: 'wrap', alignItems: 'center' }}>
+                    <div className="card flex-responsive" style={{ padding: 'var(--spacing-md)', marginBottom: 'var(--spacing-lg)', alignItems: 'center' }}>
                         <Filter size={18} style={{ color: 'var(--text-muted)' }} />
                         <div style={{ position: 'relative', flex: '1', minWidth: '180px' }}>
                             <Search size={16} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
@@ -374,9 +374,9 @@ export default function Inventory() {
                                         <th>Product</th>
                                         <th>Location</th>
                                         <th>Qty</th>
-                                        <th>Unit Value</th>
-                                        <th>Total Value</th>
-                                        <th>Moved</th>
+                                        <th className="hide-on-mobile">Unit Value</th>
+                                        <th className="hide-on-mobile">Total Value</th>
+                                        <th className="hide-on-mobile">Moved</th>
                                         <th>Actions</th>
                                     </tr>
                                 </thead>
@@ -396,11 +396,11 @@ export default function Inventory() {
                                                 </div>
                                             </td>
                                             <td style={{ fontWeight: 600 }}>{item.quantity}</td>
-                                            <td>{formatCurrency(item.recipe?.default_price || 0)}</td>
-                                            <td style={{ fontWeight: 600, color: 'var(--color-success)' }}>
+                                            <td className="hide-on-mobile">{formatCurrency(item.recipe?.default_price || 0)}</td>
+                                            <td className="hide-on-mobile" style={{ fontWeight: 600, color: 'var(--color-success)' }}>
                                                 {formatCurrency((item.quantity || 0) * (item.recipe?.default_price || 0))}
                                             </td>
-                                            <td style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                                            <td className="hide-on-mobile" style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
                                                 {item.moved_at ? new Date(item.moved_at).toLocaleDateString() : '—'}
                                             </td>
                                             <td>

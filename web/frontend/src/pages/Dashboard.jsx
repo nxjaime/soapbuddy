@@ -121,12 +121,7 @@ export default function Dashboard() {
             </div>
 
             {/* Financial Summary Row */}
-            <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-                gap: 'var(--spacing-md)',
-                marginBottom: 'var(--spacing-lg)'
-            }}>
+            <div className="responsive-grid" style={{ marginBottom: 'var(--spacing-lg)', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
                 <div className="card stat-card" style={{ padding: 'var(--spacing-md)' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                         <div>
@@ -260,16 +255,18 @@ export default function Dashboard() {
             {/* Low Stock Alert */}
             {stats?.low_stock_items > 0 && (
                 <div className="card" style={{ background: 'rgba(239, 68, 68, 0.1)', borderColor: 'var(--color-error)', marginBottom: 'var(--spacing-lg)' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-md)' }}>
-                        <AlertTriangle style={{ color: 'var(--color-error)' }} />
-                        <div>
-                            <h3 style={{ margin: 0 }}>Low Stock Warning</h3>
-                            <p style={{ margin: 0, color: 'var(--text-secondary)' }}>
-                                {stats.low_stock_items} ingredient(s) are running low on stock.
-                            </p>
+                    <div className="flex-responsive" style={{ gap: 'var(--spacing-md)' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-md)', flex: 1 }}>
+                            <AlertTriangle style={{ color: 'var(--color-error)' }} />
+                            <div>
+                                <h3 style={{ margin: 0 }}>Low Stock Warning</h3>
+                                <p style={{ margin: 0, color: 'var(--text-secondary)' }}>
+                                    {stats.low_stock_items} ingredient(s) are running low on stock.
+                                </p>
+                            </div>
                         </div>
-                        <Link to="/ingredients" className="btn btn-secondary" style={{ marginLeft: 'auto' }}>
-                            View Ingredients
+                        <Link to="/ingredients" className="btn btn-secondary">
+                            View
                         </Link>
                     </div>
                 </div>

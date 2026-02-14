@@ -16,7 +16,9 @@ import {
     Download,
     Printer,
     RefreshCcw,
-    Zap
+    Zap,
+    X,
+    BookOpen
 } from 'lucide-react';
 import { getIngredients, calculateLye } from '../api/client';
 
@@ -167,20 +169,20 @@ export default function Calculator() {
                     <Beaker className="icon" />
                     Professional Soap Calculator
                 </h1>
-                <div style={{ display: 'flex', gap: 'var(--spacing-sm)' }}>
+                <div className="flex-responsive">
                     <button className="btn btn-secondary" onClick={() => {
                         setRecipeOils([]);
                         setResults(null);
                     }}>
-                        <RefreshCcw size={16} /> Reset
+                        <RefreshCcw size={16} /> <span className="hide-on-mobile">Reset</span>
                     </button>
                     {results && (
                         <button className="btn btn-secondary" onClick={() => setShowRecipeModal(true)}>
-                            <BookOpen size={16} /> View Recipe
+                            <BookOpen size={16} /> <span className="hide-on-mobile">View</span>
                         </button>
                     )}
                     <button className="btn btn-primary" onClick={handleCalculate} disabled={calculating}>
-                        <Zap size={16} /> {calculating ? 'Calculating...' : 'Calculate Recipe'}
+                        <Zap size={16} /> {calculating ? '...' : 'Calculate'}
                     </button>
                 </div>
             </div>
@@ -337,13 +339,13 @@ export default function Calculator() {
                     <div style={{ display: 'flex', gap: 'var(--spacing-md)', height: '100%', flexDirection: 'column' }}>
                         {/* Oil Search/Library */}
                         <div style={{ flex: 1, borderBottom: '1px solid var(--glass-border)', paddingBottom: 'var(--spacing-md)' }}>
-                            <div className="calc-section-title">
-                                <Search size={14} /> Oil Library
-                                <div style={{ marginLeft: 'auto', position: 'relative', width: '200px' }}>
+                            <div className="calc-section-title flex-responsive">
+                                <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><Search size={14} /> Oil Library</span>
+                                <div style={{ position: 'relative', flex: 1, minWidth: '150px' }}>
                                     <input
                                         type="text"
                                         className="form-input"
-                                        placeholder="Search oils..."
+                                        placeholder="Search..."
                                         style={{ paddingRight: '30px', paddingLeft: '10px', height: '30px', fontSize: '0.75rem' }}
                                         value={searchTerm}
                                         onChange={(e) => setSearchTerm(e.target.value)}
@@ -471,11 +473,11 @@ export default function Calculator() {
                                     <span style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--color-secondary)' }}>{results.total_batch_weight} {settings.weight_unit}</span>
                                 </div>
                             </div>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--spacing-sm)' }}>
-                                <button className="btn btn-secondary" style={{ padding: '0.5rem', fontSize: '0.75rem' }} onClick={handlePrint}>
+                            <div className="flex-responsive" style={{ gap: 'var(--spacing-sm)' }}>
+                                <button className="btn btn-secondary" style={{ padding: '0.5rem', fontSize: '0.75rem', flex: 1 }} onClick={handlePrint}>
                                     <Printer size={14} /> Print
                                 </button>
-                                <button className="btn btn-secondary" style={{ padding: '0.5rem', fontSize: '0.75rem' }}>
+                                <button className="btn btn-secondary" style={{ padding: '0.5rem', fontSize: '0.75rem', flex: 1 }}>
                                     <Download size={14} /> Save
                                 </button>
                             </div>
@@ -492,7 +494,7 @@ export default function Calculator() {
                             <h2 className="modal-title">Recipe Summary View</h2>
                             <button className="btn-icon" onClick={() => setShowRecipeModal(false)}><X size={18} /></button>
                         </div>
-                        <div className="modal-body" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--spacing-xl)' }}>
+                        <div className="modal-body responsive-grid">
                             <div>
                                 <h3 style={{ fontSize: '1rem', borderBottom: '1px solid var(--glass-border)', paddingBottom: '5px', marginBottom: '10px' }}>Ingredients</h3>
                                 <div className="result-item">
