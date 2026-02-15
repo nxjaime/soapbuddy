@@ -35,7 +35,12 @@ import { computeQualities } from '../utils/soapMath';
 const RECIPE_TYPES = ['Soap', 'Lotion', 'Lip Balm', 'Body Butter', 'Other'];
 const LYE_TYPES = ['NaOH', 'KOH', 'Dual'];
 
+import { useSubscription } from '../contexts/SubscriptionContext';
+import { useNavigate } from 'react-router-dom';
+
 export default function Recipes() {
+    const { getLimit, tier } = useSubscription();
+    const navigate = useNavigate();
     const [recipes, setRecipes] = useState([]);
     const [ingredients, setIngredients] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -110,11 +115,33 @@ export default function Recipes() {
     }
 
     async function openModal(recipe = null) {
-        if (recipe) {
+        if (!recipe) {
+            const limit = getLimit('maxRecipes');
+            if (recipes.length >= limit) {
+                if (confirm(`You've reached your limit of ${limit} recipes on the ${tier} plan. Would you like to upgrade to create more?`)) {
+                    navigate('/settings?tab=subscription');
+                }
+                return;
+            }
+            setEditingRecipe(null);
+            setQualities(null);
+            setFormData({
+                name: '',
+                description: '',
+                recipe_type: 'Soap',
+                lye_type: 'NaOH',
+                superfat_percentage: 5,
+                water_percentage: 33,
+                total_oils_weight: 500,
+                unit: 'g',
+                stock_quantity: 0,
+                default_price: 0.0,
+                notes: '',
+                ingredients: []
+            });
+        } else {
             setEditingRecipe(recipe);
-            setQualities(null); // Reset while loading
-
-            // Set initial form data from the recipe list
+            setQualities(null);
             setFormData({
                 name: recipe.name,
                 description: recipe.description || '',
@@ -132,24 +159,6 @@ export default function Recipes() {
                     quantity: ing.quantity,
                     unit: ing.unit
                 }))
-            });
-            // Qualities will be computed by the useEffect above
-        } else {
-            setEditingRecipe(null);
-            setQualities(null);
-            setFormData({
-                name: '',
-                description: '',
-                recipe_type: 'Soap',
-                lye_type: 'NaOH',
-                superfat_percentage: 5,
-                water_percentage: 33,
-                total_oils_weight: 500,
-                unit: 'g',
-                stock_quantity: 0,
-                default_price: 0.0,
-                notes: '',
-                ingredients: []
             });
         }
         setIsModalOpen(true);

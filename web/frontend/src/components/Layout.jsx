@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { NavLink, Outlet } from 'react-router-dom';
+import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import ErrorBoundary from './ErrorBoundary';
 import { useSettings } from '../contexts/SettingsContext';
 import { useSubscription } from '../contexts/SubscriptionContext';
@@ -22,7 +22,8 @@ import {
     FileSearch,
     Warehouse,
     LogOut,
-    ShieldCheck
+    ShieldCheck,
+    Lock
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -30,7 +31,8 @@ export default function Layout() {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const { isTabVisible } = useSettings();
     const { signOut } = useAuth();
-    const { isAdmin } = useSubscription();
+    const { isAdmin, hasFeature } = useSubscription();
+    const navigate = useNavigate();
 
     const handleLogout = async () => {
         try {
@@ -52,20 +54,26 @@ export default function Layout() {
         { path: '/customers', icon: Users, label: 'Customers' },
         { path: '/sales-orders', icon: DollarSign, label: 'Sales Orders' },
         { path: '/expenses', icon: Receipt, label: 'Expenses' },
-        { path: '/financials', icon: BarChart3, label: 'Financials' },
-        { path: '/traceability', icon: FileSearch, label: 'Traceability' },
+        { path: '/financials', icon: BarChart3, label: 'Financials', featureId: 'financialInsights' },
+        { path: '/traceability', icon: FileSearch, label: 'Traceability', featureId: 'traceability' },
         { path: '/settings', icon: SettingsIcon, label: 'Settings', alwaysVisible: true },
         { path: '/admin', icon: ShieldCheck, label: 'Admin', isAdminOnly: true }
     ];
 
-    const navItems = allNavItems.filter(item => {
-        if (item.isAdminOnly && !isAdmin) return false;
-        return item.alwaysVisible || isTabVisible(item.path);
-    });
+    const navItems = allNavItems.map(item => {
+        const isLocked = item.featureId && !hasFeature(item.featureId);
+        const isHidden = !item.alwaysVisible && !isTabVisible(item.path) && !isAdmin;
+        const isAdminHidden = item.isAdminOnly && !isAdmin;
+
+        return {
+            ...item,
+            isLocked,
+            isVisible: !isHidden && !isAdminHidden
+        };
+    }).filter(item => item.isVisible);
 
     return (
         <div className="app-layout">
-            {/* Mobile Header */}
             <header className="mobile-header">
                 <button className="menu-btn" onClick={() => setIsSidebarOpen(true)}>
                     <Menu size={24} />
@@ -73,7 +81,6 @@ export default function Layout() {
                 <div className="logo">SoapBuddy</div>
             </header>
 
-            {/* Sidebar Overlay */}
             {isSidebarOpen && (
                 <div className="sidebar-overlay" onClick={() => setIsSidebarOpen(false)} />
             )}
@@ -87,17 +94,27 @@ export default function Layout() {
                 </div>
                 <nav className="nav-menu">
                     {navItems.map((item) => (
-                        <NavLink
-                            key={item.path}
-                            to={item.path}
-                            className={({ isActive }) =>
-                                `nav-item ${isActive ? 'active' : ''}`
-                            }
-                            onClick={() => setIsSidebarOpen(false)}
-                        >
-                            <item.icon size={20} />
-                            <span>{item.label}</span>
-                        </NavLink>
+                        <div key={item.path} style={{ position: 'relative' }}>
+                            <NavLink
+                                to={item.isLocked ? '#' : item.path}
+                                className={({ isActive }) =>
+                                    `nav-item ${isActive && !item.isLocked ? 'active' : ''} ${item.isLocked ? 'locked' : ''}`
+                                }
+                                onClick={(e) => {
+                                    if (item.isLocked) {
+                                        e.preventDefault();
+                                        navigate('/settings?tab=subscription');
+                                    }
+                                    setIsSidebarOpen(false);
+                                }}
+                            >
+                                <item.icon size={20} />
+                                <span>{item.label}</span>
+                                {item.isLocked && (
+                                    <Lock size={14} className="lock-icon" style={{ marginLeft: 'auto', opacity: 0.5 }} />
+                                )}
+                            </NavLink>
+                        </div>
                     ))}
                 </nav>
 

@@ -5,34 +5,53 @@ import { useAuth } from './AuthContext';
 const SubscriptionContext = createContext();
 
 /**
- * Tier access map for feature gating
- * Each tier gets all features of the tier below it + its own
+ * Tier definitions and feature limits
  */
-const TIER_LEVELS = { free: 0, maker: 1, manufacturer: 2 };
-
-const TIER_FEATURES = {
+export const PLANS = {
     free: {
-        maxRecipes: 3,
-        inventoryTransfers: false,
-        financialInsights: false,
-        traceability: false,
-        label: 'Free',
+        id: 'free',
+        name: 'Free',
+        price: '$0',
+        description: 'Perfect for hobbyists starting their soap-making journey.',
+        features: [
+            { id: 'maxRecipes', label: 'Up to 3 Recipes', value: 3 },
+            { id: 'inventoryTransfers', label: 'Basic Inventory', value: false },
+            { id: 'financialInsights', label: 'Financial Insights', value: false },
+            { id: 'traceability', label: 'Batch Traceability', value: false },
+            { id: 'admin', label: 'Admin Access', value: false },
+        ]
     },
     maker: {
-        maxRecipes: Infinity,
-        inventoryTransfers: true,
-        financialInsights: true,
-        traceability: false,
-        label: 'Maker',
+        id: 'maker',
+        name: 'Maker',
+        price: '$12',
+        period: '/mo',
+        description: 'For growing craft businesses who need more control.',
+        features: [
+            { id: 'maxRecipes', label: 'Unlimited Recipes', value: Infinity },
+            { id: 'inventoryTransfers', label: 'Inventory Transfers', value: true },
+            { id: 'financialInsights', label: 'Financial Insights', value: true },
+            { id: 'traceability', label: 'Batch Traceability', value: false },
+            { id: 'admin', label: 'Admin Access', value: false },
+        ]
     },
     manufacturer: {
-        maxRecipes: Infinity,
-        inventoryTransfers: true,
-        financialInsights: true,
-        traceability: true,
-        label: 'Manufacturer',
-    },
+        id: 'manufacturer',
+        name: 'Manufacturer',
+        price: '$29',
+        period: '/mo',
+        description: 'Advanced features for professional soap manufacturing.',
+        features: [
+            { id: 'maxRecipes', label: 'Unlimited Recipes', value: Infinity },
+            { id: 'inventoryTransfers', label: 'Inventory Transfers', value: true },
+            { id: 'financialInsights', label: 'Financial Insights', value: true },
+            { id: 'traceability', label: 'End-to-end Traceability', value: true },
+            { id: 'admin', label: 'Admin Access', value: false }, // Only super admins
+        ]
+    }
 };
+
+const TIER_LEVELS = { free: 0, maker: 1, manufacturer: 2 };
 
 export function SubscriptionProvider({ children }) {
     const { user } = useAuth();
@@ -88,16 +107,27 @@ export function SubscriptionProvider({ children }) {
             .subscribe();
 
         return () => {
-            supabase.removeChannel(channel);
+            if (channel) supabase.removeChannel(channel);
         };
     }, [user]);
 
     /**
      * Check if current tier has a specific feature
      */
-    const hasFeature = (featureName) => {
-        const features = TIER_FEATURES[tier] || TIER_FEATURES.free;
-        return features[featureName] ?? false;
+    const hasFeature = (featureId) => {
+        const plan = PLANS[tier] || PLANS.free;
+        const feature = plan.features.find(f => f.id === featureId);
+        if (!feature) return false;
+        return typeof feature.value === 'boolean' ? feature.value : true;
+    };
+
+    /**
+     * Get limit for a specific feature (e.g. number of recipes)
+     */
+    const getLimit = (featureId) => {
+        const plan = PLANS[tier] || PLANS.free;
+        const feature = plan.features.find(f => f.id === featureId);
+        return feature ? feature.value : null;
     };
 
     /**
@@ -112,10 +142,11 @@ export function SubscriptionProvider({ children }) {
         profile,
         isAdmin,
         loading,
-        features: TIER_FEATURES[tier] || TIER_FEATURES.free,
+        currentPlan: PLANS[tier] || PLANS.free,
+        allPlans: PLANS,
         hasFeature,
+        getLimit,
         meetsMinTier,
-        TIER_FEATURES,
     };
 
     return (

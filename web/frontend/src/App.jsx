@@ -3,6 +3,7 @@ import Layout from './components/Layout'
 import { AuthProvider } from './contexts/AuthContext'
 import { SubscriptionProvider } from './contexts/SubscriptionContext'
 import AuthPage from './pages/Auth'
+import LandingPage from './pages/LandingPage'
 import ProtectedRoute from './components/ProtectedRoute'
 import Dashboard from './pages/Dashboard'
 import Ingredients from './pages/Ingredients'
@@ -31,6 +32,7 @@ function App() {
         <SettingsProvider>
           <Routes>
             <Route path="/auth" element={<AuthPage />} />
+            <Route path="/landing" element={<LandingPage />} />
             <Route path="/" element={
               <ProtectedRoute>
                 <Layout />
