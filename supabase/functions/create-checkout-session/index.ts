@@ -55,6 +55,9 @@ serve(async (req) => {
             ],
             mode: "subscription",
             customer: customerId,
+            subscription_data: {
+                trial_period_days: 14,
+            },
             success_url: `${return_url}?session_id={CHECKOUT_SESSION_ID}`,
             cancel_url: return_url,
         });

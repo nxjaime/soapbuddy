@@ -309,6 +309,21 @@ export const updateBatch = async (id, batchData) => {
     return data;
 };
 
+export const startBatch = async (id) => {
+    const { error } = await supabase.rpc('start_batch', { p_batch_id: id });
+    if (error) handleError(error, 'start batch');
+    return { success: true };
+};
+
+export const completeBatch = async (id, yieldQuantity = 0) => {
+    const { error } = await supabase.rpc('complete_batch', {
+        p_batch_id: id,
+        p_yield_quantity: yieldQuantity
+    });
+    if (error) handleError(error, 'complete batch');
+    return { success: true };
+};
+
 // ============ Lye Calculator ============
 
 export const calculateLye = async (request) => {
@@ -1173,6 +1188,84 @@ export const transferInventory = async (itemId, toLocationId, transferQty) => {
         if (insertErr) handleError(insertErr, 'create transferred inventory');
         return newItem;
     }
+};
+
+// ============ Bulk Oil Import ============
+
+/**
+ * Import oils from the OIL_LIBRARY into the user's ingredients table.
+ * Also inserts fatty acid profiles.
+ * @param {Array} oils - array of oil objects from minimizedOilLibrary
+ * @returns {{ imported: number, skipped: number }}
+ */
+export const bulkImportOils = async (oils) => {
+    ensureClient();
+    const user_id = await getUserId();
+
+    // Fetch existing ingredient names to avoid duplicates
+    const { data: existing } = await supabase
+        .from('ingredients')
+        .select('name')
+        .eq('user_id', user_id);
+
+    const existingNames = new Set((existing || []).map(i => i.name.toLowerCase()));
+
+    const toInsert = oils.filter(oil => !existingNames.has(oil.name.toLowerCase()));
+
+    if (toInsert.length === 0) return { imported: 0, skipped: oils.length };
+
+    // Build ingredient rows
+    const ingredientRows = toInsert.map(oil => ({
+        user_id,
+        name: oil.name,
+        category: 'Base Oil',
+        unit: 'g',
+        quantity_on_hand: 0,
+        cost_per_unit: 0,
+        sap_naoh: oil.sap,
+        sap_koh: oil.sap ? parseFloat((oil.sap * 1.403).toFixed(4)) : null,
+        iodine_value: oil.iodine || null,
+    }));
+
+    const { data: inserted, error } = await supabase
+        .from('ingredients')
+        .insert(ingredientRows)
+        .select('id, name');
+
+    if (error) handleError(error, 'bulk import oils');
+
+    // Build fatty acid profile rows
+    const profileRows = (inserted || []).map(ing => {
+        const oil = toInsert.find(o => o.name === ing.name);
+        if (!oil) return null;
+        return {
+            ingredient_id: ing.id,
+            lauric: oil.lauric || 0,
+            myristic: oil.myristic || 0,
+            palmitic: oil.palmitic || 0,
+            stearic: oil.stearic || 0,
+            ricinoleic: oil.ricinoleic || 0,
+            oleic: oil.oleic || 0,
+            linoleic: oil.linoleic || 0,
+            linolenic: oil.linolenic || 0,
+            hardness: (oil.palmitic || 0) + (oil.stearic || 0),
+            cleansing: (oil.lauric || 0) + (oil.myristic || 0),
+            conditioning: (oil.oleic || 0) + (oil.linoleic || 0) + (oil.linolenic || 0) + (oil.ricinoleic || 0),
+            bubbly: (oil.lauric || 0) + (oil.myristic || 0) + (oil.ricinoleic || 0),
+            creamy: (oil.palmitic || 0) + (oil.stearic || 0) + (oil.ricinoleic || 0),
+            iodine: oil.iodine || 0,
+            ins: oil.ins || 0,
+        };
+    }).filter(Boolean);
+
+    if (profileRows.length > 0) {
+        const { error: profileError } = await supabase
+            .from('fatty_acid_profiles')
+            .insert(profileRows);
+        if (profileError) console.warn('Fatty acid profile insert error:', profileError);
+    }
+
+    return { imported: inserted?.length || 0, skipped: oils.length - toInsert.length };
 };
 
 // ============ Profiles (Admin) ============

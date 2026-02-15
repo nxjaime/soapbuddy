@@ -10,7 +10,8 @@ import {
     Factory,
     Activity,
     Scale,
-    Info
+    Info,
+    Tag
 } from 'lucide-react';
 import {
     Radar,
@@ -37,10 +38,12 @@ const LYE_TYPES = ['NaOH', 'KOH', 'Dual'];
 
 import { useSubscription } from '../contexts/SubscriptionContext';
 import { useNavigate } from 'react-router-dom';
+import LabelStudio from '../components/LabelStudio';
 
 export default function Recipes() {
-    const { getLimit, tier } = useSubscription();
+    const { getLimit, tier, meetsMinTier, profile } = useSubscription();
     const navigate = useNavigate();
+    const [labelRecipe, setLabelRecipe] = useState(null);
     const [recipes, setRecipes] = useState([]);
     const [ingredients, setIngredients] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -414,6 +417,15 @@ export default function Recipes() {
                                     <Factory size={16} />
                                     Make Batch
                                 </button>
+                                {meetsMinTier('manufacturer') && (
+                                    <button
+                                        className="btn-icon"
+                                        title="Create Label"
+                                        onClick={() => setLabelRecipe(recipe)}
+                                    >
+                                        <Tag size={16} />
+                                    </button>
+                                )}
                                 <button className="btn-icon" onClick={() => openModal(recipe)}>
                                     <Edit2 size={16} />
                                 </button>
@@ -428,6 +440,15 @@ export default function Recipes() {
                         </div>
                     ))}
                 </div>
+            )}
+
+            {/* Label Studio */}
+            {labelRecipe && (
+                <LabelStudio
+                    recipe={labelRecipe}
+                    onClose={() => setLabelRecipe(null)}
+                    businessName={profile?.business_name || ''}
+                />
             )}
 
             {/* Modal */}

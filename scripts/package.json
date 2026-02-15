@@ -1,0 +1,15 @@
+{
+  "name": "soapbuddy-scripts",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Data migration and utility scripts for SoapBuddy",
+  "scripts": {
+    "migrate": "node migrate-legacy.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.38.4"
+  },
+  "devDependencies": {
+    "better-sqlite3": "^9.4.3"
+  }
+}

@@ -9,7 +9,7 @@ import {
     XCircle,
     Package
 } from 'lucide-react';
-import { getBatches, getRecipes, createBatch, updateBatch } from '../api/client';
+import { getBatches, getRecipes, createBatch, updateBatch, startBatch, completeBatch } from '../api/client';
 
 const STATUS_OPTIONS = ['Planned', 'In Progress', 'Curing', 'Complete', 'Cancelled'];
 
@@ -107,20 +107,23 @@ export default function Production() {
     async function handleStatusChange(batchId, newStatus) {
         try {
             setUpdatingId(batchId);
-            const updateData = { status: newStatus };
+
             if (newStatus === 'In Progress') {
-                updateData.production_date = new Date().toISOString();
+                // start_batch deducts ingredients and populates usage rows
+                await startBatch(batchId);
             } else if (newStatus === 'Complete') {
                 const yieldQty = prompt("Enter number of units produced (Yield):", "0");
                 if (yieldQty === null) {
                     setUpdatingId(null);
                     return; // Cancelled
                 }
-                updateData.yield_quantity = parseInt(yieldQty) || 0;
-                updateData.cure_end_date = new Date().toISOString();
+                // complete_batch adds yield to stock, no ingredient deduction
+                await completeBatch(batchId, parseInt(yieldQty) || 0);
+            } else {
+                // Other transitions (Curing, Cancelled) — plain update
+                await updateBatch(batchId, { status: newStatus });
             }
 
-            await updateBatch(batchId, updateData);
             await loadBatches();
         } catch (err) {
             console.error('Failed to update batch:', err);

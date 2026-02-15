@@ -12,6 +12,7 @@
   "dependencies": {
     "@stripe/stripe-js": "^8.7.0",
     "@supabase/supabase-js": "^2.78.0",
+    "html2canvas": "^1.4.1",
     "html5-qrcode": "^2.3.8",
     "lucide-react": "^0.563.0",
     "react": "^19.2.0",

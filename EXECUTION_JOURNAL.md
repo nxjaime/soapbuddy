@@ -5,6 +5,75 @@
 - Created `EXECUTION_JOURNAL.md` to maintain a persistent history of changes.
 - Initial project structure exploration completed.
 
+## 2026-02-15 - SoapBuddy SaaS v1.0 Implementation
+
+### MILESTONE 1: Physics Squad (all tasks complete)
+
+**Task 1.1 — Unit Conversion in `receive_supply_order()`**
+- Applied migration `physics_unit_conversion_fifo_batch_timing`
+- Created `convert_weight(quantity, from_unit, to_unit)` IMMUTABLE helper (g/kg/oz/lb ↔ g)
+- Added `quantity_base_unit` column to `supply_order_items` for audit trail
+- Updated `receive_supply_order()` to call `convert_weight()` before adding to `quantity_on_hand`
+- WAC (Weighted Average Cost) now calculated on converted base-unit quantities
+
+**Task 1.2 — FIFO Costing**
+- Added `supply_order_item_id` FK to `batch_ingredient_usage`
+- Created `allocate_batch_ingredients(p_batch_id)` — walks FIFO lots by `order_date ASC`, assigns cost per base-unit gram
+
+**Task 1.3 — Inventory Deduction Timing**
+- Split `finalize_batch()` into two RPCs:
+  - `start_batch(p_batch_id)` — deducts ingredients, populates `batch_ingredient_usage` from recipe, runs FIFO allocation, sets status = "In Progress"
+  - `complete_batch(p_batch_id, p_yield_quantity)` — adds yield to `recipes.stock_quantity`, sets status = "Complete"
+- Updated `Production.jsx` to call `startBatch` / `completeBatch` RPCs
+- Added `startBatch()` and `completeBatch()` to `api/client.js`
+
+### MILESTONE 2: Revenue & Access Squad (all tasks complete)
+
+**Task 2.1 — 14-Day Trial**
+- Added `subscription_data: { trial_period_days: 14 }` to `create-checkout-session` edge function
+- Deployed updated function (version 2)
+
+**Task 2.2 — Tier Enforcement**
+- Added 5 new feature flags to PLANS in `SubscriptionContext.jsx`: `production`, `inventory`, `supplyChain`, `salesTracking`, `labelCreator`
+- Updated `Layout.jsx` to add `featureId` for all locked nav items (Production, Inventory, Suppliers, Supply Orders, Customers, Sales Orders, Expenses)
+- Created `TierGate.jsx` component — shows upgrade prompt if user navigates directly to locked route via URL
+- Wrapped all protected routes in `App.jsx` with `<TierGate featureId="...">`
+
+**Task 2.3 — Server-side Recipe Limit**
+- Applied migration `recipe_limit_trigger`
+- Created `check_recipe_limit()` trigger function (BEFORE INSERT on `recipes`)
+- Free tier capped at 3 recipes; enforced at DB level regardless of client
+
+### MILESTONE 3: Label Creator (complete)
+
+**Task 3.1 — Label Studio UI**
+- Installed `html2canvas` dependency
+- Created `LabelStudio.jsx` — full label editor with INCI-sorted ingredient list, editable fields (product name, tagline, net weight, warnings, business name), logo upload, live preview, and PNG export
+- Added "Create Label" (Tag icon) button to each recipe card in `Recipes.jsx`, gated behind `meetsMinTier('manufacturer')`
+
+### MILESTONE 4: Onboarding Squad (all tasks complete)
+
+**Task 4.1 — Welcome Wizard**
+- Created `WelcomeWizard.jsx` — 3-step onboarding wizard (business name → import oils → create recipe)
+- Wizard state tracked in `localStorage` (`soapbuddy_wizard_complete`)
+- Dashboard detects zero recipes after load and shows the wizard automatically
+
+**Task 4.2 — Quick Import from Master Oil Library**
+- Added `bulkImportOils(oils)` to `api/client.js`
+- Inserts ingredients + fatty acid profiles; skips duplicates by name
+- Wired into WelcomeWizard Step 2
+
+**Task 4.3 — Legacy SQLite Migration Script**
+- Created `scripts/migrate-legacy.js` (Node.js, requires `better-sqlite3`)
+- Migrates `ingredients`, `recipes`, `recipe_ingredients` with ID remapping
+- Maps `actual_quantity` → `quantity_used`, injects `user_id`
+- `scripts/package.json` with `better-sqlite3` dev dep + `@supabase/supabase-js`
+
+### Build Status
+- `npm run build` — ✅ zero errors (5.26s)
+
+---
+
 ## 2026-02-07T20:45:00-06:00 - Phase 1: Security Lockdown
 - Modified `MIGRATION_GUIDE.md` to remove hardcoded Supabase URL and Anon Key, replacing them with secure placeholders.
 - Updated `supabase-schema.sql` to revoke "Allow all for anon" policies and implement "Authenticated users only" policies for all 13 tables (ingredients, recipes, etc.).

@@ -26,9 +26,15 @@ import {
     getRecentActivity
 } from '../api/client';
 import { useSettings } from '../contexts/SettingsContext';
+import { useAuth } from '../contexts/AuthContext';
+import WelcomeWizard from '../components/WelcomeWizard';
+
+const WIZARD_STORAGE_KEY = 'soapbuddy_wizard_complete';
 
 export default function Dashboard() {
     const { formatCurrency } = useSettings();
+    const { user } = useAuth();
+    const [showWizard, setShowWizard] = useState(false);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [stats, setStats] = useState({
@@ -71,6 +77,12 @@ export default function Dashboard() {
             });
             setRecentActivity(activityData);
 
+            // Show welcome wizard for new users with zero recipes
+            const wizardDone = localStorage.getItem(WIZARD_STORAGE_KEY);
+            if (!wizardDone && statsData.total_recipes === 0) {
+                setShowWizard(true);
+            }
+
         } catch (err) {
             console.error('Error loading dashboard:', err);
             setError('Failed to load dashboard data');
@@ -103,6 +115,14 @@ export default function Dashboard() {
 
     return (
         <div>
+            {/* Welcome Wizard for new empty accounts */}
+            {showWizard && (
+                <WelcomeWizard
+                    userId={user?.id}
+                    onDone={() => setShowWizard(false)}
+                />
+            )}
+
             <div className="page-header">
                 <h1 className="page-title">
                     <TrendingUp className="icon" />

@@ -1,5 +1,6 @@
 import { Routes, Route } from 'react-router-dom'
 import Layout from './components/Layout'
+import TierGate from './components/TierGate'
 import { AuthProvider } from './contexts/AuthContext'
 import { SubscriptionProvider } from './contexts/SubscriptionContext'
 import AuthPage from './pages/Auth'
@@ -41,17 +42,34 @@ function App() {
               <Route index element={<Dashboard />} />
               <Route path="ingredients" element={<Ingredients />} />
               <Route path="recipes" element={<Recipes />} />
-              <Route path="production" element={<Production />} />
-              <Route path="inventory" element={<Inventory />} />
-
+              <Route path="production" element={
+                <TierGate featureId="production"><Production /></TierGate>
+              } />
+              <Route path="inventory" element={
+                <TierGate featureId="inventory"><Inventory /></TierGate>
+              } />
               <Route path="calculator" element={<Calculator />} />
-              <Route path="suppliers" element={<Suppliers />} />
-              <Route path="supply-orders" element={<SupplyOrders />} />
-              <Route path="customers" element={<Customers />} />
-              <Route path="sales-orders" element={<SalesOrders />} />
-              <Route path="expenses" element={<Expenses />} />
-              <Route path="financials" element={<Financials />} />
-              <Route path="traceability" element={<Traceability />} />
+              <Route path="suppliers" element={
+                <TierGate featureId="supplyChain"><Suppliers /></TierGate>
+              } />
+              <Route path="supply-orders" element={
+                <TierGate featureId="supplyChain"><SupplyOrders /></TierGate>
+              } />
+              <Route path="customers" element={
+                <TierGate featureId="salesTracking"><Customers /></TierGate>
+              } />
+              <Route path="sales-orders" element={
+                <TierGate featureId="salesTracking"><SalesOrders /></TierGate>
+              } />
+              <Route path="expenses" element={
+                <TierGate featureId="salesTracking"><Expenses /></TierGate>
+              } />
+              <Route path="financials" element={
+                <TierGate featureId="financialInsights"><Financials /></TierGate>
+              } />
+              <Route path="traceability" element={
+                <TierGate featureId="traceability"><Traceability /></TierGate>
+              } />
               <Route path="settings" element={<Settings />} />
               <Route path="admin" element={<Admin />} />
               <Route path="calculator/print" element={<PrintRecipe />} />
