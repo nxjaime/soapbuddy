@@ -19,7 +19,6 @@ import {
     Users,
     Zap,
     Heart,
-    Star,
     FileSearch,
     Menu,
     X
@@ -121,36 +120,18 @@ export default function LandingPage() {
 
     // ── Stats ──
     const stats = [
-        { value: '2,000+', label: 'Recipes Crafted' },
-        { value: '500+', label: 'Soapmakers' },
-        { value: '10,000+', label: 'Batches Tracked' },
-        { value: '99.9%', label: 'Uptime' }
-    ];
-
-    // ── Testimonials ──
-    const testimonials = [
-        {
-            quote: "SoapBuddy turned my kitchen hobby into a real business. I finally know my true costs and can price with confidence.",
-            name: 'Sarah M.',
-            role: 'Artisan Soapmaker',
-            stars: 5
-        },
-        {
-            quote: "I used to dread batch records. Now they're automatic. My co-op inspector was impressed!",
-            name: 'Linda K.',
-            role: 'Small Batch Manufacturer',
-            stars: 5
-        },
-        {
-            quote: "The lye calculator alone is worth it — but having everything in one place? Game changer for my market business.",
-            name: 'Jessica R.',
-            role: 'Market Vendor & Maker',
-            stars: 5
-        }
+        { value: '100+', label: 'Oils in Calculator' },
+        { value: '14-Day', label: 'Free Trial on Paid Plans' },
+        { value: '0', label: 'Setup Fees' },
+        { value: '∞', label: 'Recipes on Paid Plans' }
     ];
 
     // ── FAQ ──
     const faqs = [
+        {
+            q: 'Do paid plans come with a free trial?',
+            a: 'Yes! Both the Maker and Manufacturer plans include a 14-day free trial. You\'ll need to enter a card at checkout, but you won\'t be charged until after the trial period ends — and you can cancel anytime before that.'
+        },
         {
             q: 'Is there really a free plan?',
             a: 'Absolutely! Our Free plan lets you manage up to 3 recipes, track ingredients, run lye calculations, and manage basic production — no credit card required. It\'s perfect for hobbyists who want to get organized.'
@@ -254,7 +235,7 @@ export default function LandingPage() {
                     </div>
                     <p className="landing-hero-trust">
                         <Check size={16} /> Free forever plan &nbsp;·&nbsp;
-                        <Check size={16} /> No credit card required &nbsp;·&nbsp;
+                        <Check size={16} /> 14-day trial on paid plans &nbsp;·&nbsp;
                         <Check size={16} /> Setup in minutes
                     </p>
                 </div>
@@ -320,38 +301,6 @@ export default function LandingPage() {
                 </div>
             </section>
 
-            {/* ═══════ TESTIMONIALS ═══════ */}
-            <section className="landing-section landing-testimonials-section">
-                <div className="landing-section-inner">
-                    <div className="landing-section-header landing-animate">
-                        <span className="landing-section-tag">Loved by Makers</span>
-                        <h2 className="landing-section-title">
-                            Hear From Our <span className="landing-gradient-text">Community</span>
-                        </h2>
-                    </div>
-                    <div className="landing-testimonials-grid">
-                        {testimonials.map((t, i) => (
-                            <div key={i} className="landing-testimonial-card landing-animate" style={{ animationDelay: `${i * 0.1}s` }}>
-                                <div className="landing-testimonial-stars">
-                                    {Array.from({ length: t.stars }).map((_, j) => (
-                                        <Star key={j} size={16} fill="var(--color-secondary)" stroke="var(--color-secondary)" />
-                                    ))}
-                                </div>
-                                <blockquote>"{t.quote}"</blockquote>
-                                <div className="landing-testimonial-author">
-                                    <div className="landing-testimonial-avatar">
-                                        {t.name.charAt(0)}
-                                    </div>
-                                    <div>
-                                        <strong>{t.name}</strong>
-                                        <span>{t.role}</span>
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </section>
 
             {/* ═══════ PRICING ═══════ */}
             <section className="landing-section landing-pricing-section" id="pricing">
@@ -394,6 +343,9 @@ export default function LandingPage() {
                                             );
                                         })}
                                     </ul>
+                                    {key !== 'free' && (
+                                        <p className="landing-plan-trial">✓ 14-day free trial included</p>
+                                    )}
                                     <button
                                         className={`landing-plan-btn ${isPopular ? 'landing-btn-primary' : 'landing-btn-ghost'}`}
                                         onClick={goToSignUp}
@@ -453,7 +405,7 @@ export default function LandingPage() {
                         Create Your Free Account
                         <ArrowRight size={20} />
                     </button>
-                    <span className="landing-cta-note">No credit card · Free forever plan · Cancel anytime</span>
+                    <span className="landing-cta-note">Free plan · 14-day trial on paid plans · Cancel anytime</span>
                 </div>
             </section>
 

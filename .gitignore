@@ -39,6 +39,9 @@ Thumbs.db
 .env.*.local
 !.env.example
 
+# MCP config (contains access tokens)
+.mcp.json
+
 # Node.js
 node_modules/
 npm-debug.log*

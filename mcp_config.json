@@ -1,0 +1,38 @@
+{
+    "mcpServers": {
+        "notebooklm": {
+            "command": "notebooklm-mcp",
+            "description": "Integrated Knowledge Management and Research Synthesis"
+        },
+        "supabase": {
+            "command": "npx",
+            "args": [
+                "-y",
+                "@supabase/mcp-server-supabase@latest",
+                "--access-token",
+                "INSERT_YOUR_SUPABASE_TOKEN"
+            ],
+            "description": "Database Management, Edge Functions, and RLS Auditing"
+        },
+        "vercel": {
+            "command": "npx",
+            "args": [
+                "-y",
+                "mcp-remote",
+                "https://mcp.vercel.com"
+            ],
+            "env": {
+                "VERCEL_TOKEN": "INSERT_YOUR_VERCEL_TOKEN"
+            },
+            "description": "Deployment Orchestration, Scaling, and Runtime Logging"
+        },
+        "mcp-builder": {
+            "command": "npx",
+            "args": [
+                "-y",
+                "@anthropics/mcp-builder"
+            ],
+            "description": "Autonomous MCP Server Construction and Extension"
+        }
+    }
+}
