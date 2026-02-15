@@ -48,6 +48,8 @@ yarn-error.log*
 # Agent Artifacts
 .gemini/
 .agent/
+.agents/
+.claude/
 
 # Build output
 web/frontend/dist/

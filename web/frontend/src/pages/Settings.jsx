@@ -34,7 +34,7 @@ import { useSubscription } from '../contexts/SubscriptionContext';
 
 export default function Settings() {
     const { settings: globalSettings, updateSettings, toggleTab, isTabVisible } = useSettings();
-    const { tier, allPlans } = useSubscription();
+    const { tier, allPlans, subscribe, manageSubscription } = useSubscription();
     const [searchParams, setSearchParams] = useSearchParams();
     const activeTab = searchParams.get('tab') || 'general';
 
@@ -327,16 +327,21 @@ export default function Settings() {
                                     {tier === 'free' ? 'Unlock professional features to take your business to the next level.' : 'Thank you for being a subscriber!'}
                                 </p>
                             </div>
-                            {tier === 'free' && (
-                                <button className="btn btn-primary">
+                            {tier === 'free' ? (
+                                <button className="btn btn-primary" onClick={() => document.getElementById('plans-grid').scrollIntoView({ behavior: 'smooth' })}>
                                     <ArrowUpCircle size={18} />
                                     Upgrade Now
+                                </button>
+                            ) : (
+                                <button className="btn btn-secondary" onClick={manageSubscription}>
+                                    <CreditCard size={18} />
+                                    Manage Subscription
                                 </button>
                             )}
                         </div>
                     </div>
 
-                    <div className="plans-grid">
+                    <div className="plans-grid" id="plans-grid">
                         {Object.values(allPlans).map((plan) => (
                             <div key={plan.id} className={`plan-card ${tier === plan.id ? 'current' : ''}`}>
                                 {tier === plan.id && <div className="current-plan-badge">Current Plan</div>}
@@ -368,7 +373,7 @@ export default function Settings() {
                                         type="button"
                                         className={`btn ${plan.id === 'maker' ? 'btn-primary' : 'btn-secondary'}`}
                                         style={{ width: '100%', marginTop: 'var(--spacing-lg)' }}
-                                        onClick={() => alert('Payment integration coming soon! You can upgrade tiers manually in the Admin panel for now.')}
+                                        onClick={() => plan.id === 'free' ? manageSubscription() : subscribe(plan.id)}
                                     >
                                         {plan.id === 'free' ? 'Downgrade' : 'Select Plan'}
                                     </button>

@@ -1,12 +1,13 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from './AuthContext';
+import { loadStripe } from '@stripe/stripe-js';
 
 const SubscriptionContext = createContext();
 
-/**
- * Tier definitions and feature limits
- */
+// Initialize Stripe outside component
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || '');
+
 export const PLANS = {
     free: {
         id: 'free',
@@ -27,6 +28,7 @@ export const PLANS = {
         price: '$12',
         period: '/mo',
         description: 'For growing craft businesses who need more control.',
+        priceId: import.meta.env.VITE_STRIPE_PRICE_MAKER,
         features: [
             { id: 'maxRecipes', label: 'Unlimited Recipes', value: Infinity },
             { id: 'inventoryTransfers', label: 'Inventory Transfers', value: true },
@@ -41,6 +43,7 @@ export const PLANS = {
         price: '$29',
         period: '/mo',
         description: 'Advanced features for professional soap manufacturing.',
+        priceId: import.meta.env.VITE_STRIPE_PRICE_MANUFACTURER,
         features: [
             { id: 'maxRecipes', label: 'Unlimited Recipes', value: Infinity },
             { id: 'inventoryTransfers', label: 'Inventory Transfers', value: true },
@@ -112,6 +115,56 @@ export function SubscriptionProvider({ children }) {
     }, [user]);
 
     /**
+     * Start subscription checkout flow
+     */
+    const subscribe = async (planId) => {
+        if (!user) return;
+
+        try {
+            const priceId = PLANS[planId]?.priceId;
+            if (!priceId) throw new Error('Price ID not found for this plan');
+
+            const { data, error } = await supabase.functions.invoke('create-checkout-session', {
+                body: {
+                    price: priceId,
+                    return_url: window.location.origin
+                }
+            });
+
+            if (error) throw error;
+            if (data?.url) {
+                window.location.href = data.url;
+            }
+        } catch (error) {
+            console.error('Error creating checkout session:', error);
+            alert('Failed to start checkout. Please try again.');
+        }
+    };
+
+    /**
+     * Open Customer Portal
+     */
+    const manageSubscription = async () => {
+        if (!user) return;
+
+        try {
+            const { data, error } = await supabase.functions.invoke('create-portal-session', {
+                body: {
+                    return_url: window.location.origin + '/settings?tab=subscription'
+                }
+            });
+
+            if (error) throw error;
+            if (data?.url) {
+                window.location.href = data.url;
+            }
+        } catch (error) {
+            console.error('Error creating portal session:', error);
+            alert('Failed to open billing portal. Please try again.');
+        }
+    };
+
+    /**
      * Check if current tier has a specific feature
      */
     const hasFeature = (featureId) => {
@@ -147,6 +200,8 @@ export function SubscriptionProvider({ children }) {
         hasFeature,
         getLimit,
         meetsMinTier,
+        subscribe,
+        manageSubscription,
     };
 
     return (
