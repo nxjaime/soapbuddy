@@ -28,6 +28,16 @@ const ensureClient = () => {
     }
 };
 
+/**
+ * Get current authenticated user's ID for multi-tenant inserts.
+ * RLS requires user_id = auth.uid() on all insert operations.
+ */
+const getUserId = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Not authenticated. Please sign in.');
+    return user.id;
+};
+
 // ============ Ingredients ============
 
 export const getIngredients = async (params = {}) => {
@@ -57,9 +67,10 @@ export const getIngredient = async (id) => {
 };
 
 export const createIngredient = async (ingredientData) => {
+    const user_id = await getUserId();
     const { data, error } = await supabase
         .from('ingredients')
-        .insert(ingredientData)
+        .insert({ ...ingredientData, user_id })
         .select()
         .single();
     if (error) handleError(error, 'create ingredient');
@@ -134,12 +145,13 @@ export const getRecipe = async (id) => {
 };
 
 export const createRecipe = async (recipeData) => {
+    const user_id = await getUserId();
     const { ingredients, ...recipe } = recipeData;
 
     // First create the recipe
     const { data: newRecipe, error: recipeError } = await supabase
         .from('recipes')
-        .insert(recipe)
+        .insert({ ...recipe, user_id })
         .select()
         .single();
 
@@ -151,7 +163,8 @@ export const createRecipe = async (recipeData) => {
             recipe_id: newRecipe.id,
             ingredient_id: ing.ingredient_id,
             quantity: ing.quantity,
-            unit: ing.unit || 'g'
+            unit: ing.unit || 'g',
+            user_id
         }));
 
         const { error: ingError } = await supabase
@@ -186,11 +199,13 @@ export const updateRecipe = async (id, recipeData) => {
 
         // Add new ingredients
         if (ingredients.length > 0) {
+            const user_id = await getUserId();
             const recipeIngredients = ingredients.map(ing => ({
                 recipe_id: id,
                 ingredient_id: ing.ingredient_id,
                 quantity: ing.quantity,
-                unit: ing.unit || 'g'
+                unit: ing.unit || 'g',
+                user_id
             }));
 
             const { error: ingError } = await supabase
@@ -252,9 +267,10 @@ export const getBatch = async (id) => {
 };
 
 export const createBatch = async (batchData) => {
+    const user_id = await getUserId();
     const { data, error } = await supabase
         .from('production_batches')
-        .insert(batchData)
+        .insert({ ...batchData, user_id })
         .select()
         .single();
     if (error) handleError(error, 'create batch');
@@ -419,9 +435,10 @@ export const getSuppliers = async () => {
 };
 
 export const createSupplier = async (supplierData) => {
+    const user_id = await getUserId();
     const { data, error } = await supabase
         .from('suppliers')
-        .insert(supplierData)
+        .insert({ ...supplierData, user_id })
         .select()
         .single();
     if (error) handleError(error, 'create supplier');
@@ -484,11 +501,12 @@ export const getSupplyOrder = async (id) => {
 };
 
 export const createSupplyOrder = async (orderData) => {
+    const user_id = await getUserId();
     const { items, ...order } = orderData;
 
     const { data: newOrder, error: orderError } = await supabase
         .from('supply_orders')
-        .insert(order)
+        .insert({ ...order, user_id })
         .select()
         .single();
 
@@ -497,7 +515,8 @@ export const createSupplyOrder = async (orderData) => {
     if (items && items.length > 0) {
         const orderItems = items.map(item => ({
             order_id: newOrder.id,
-            ...item
+            ...item,
+            user_id
         }));
 
         const { error: itemsError } = await supabase
@@ -519,12 +538,14 @@ export const updateSupplyOrder = async (id, updateData) => {
         await supabase.from('supply_order_items').delete().eq('order_id', id);
 
         // Insert new items
+        const user_id = await getUserId();
         const orderItems = updateData.items.map(item => ({
             order_id: id,
             ingredient_id: parseInt(item.ingredient_id),
             quantity: parseFloat(item.quantity),
             unit: item.unit || 'g',
-            cost: parseFloat(item.cost)
+            cost: parseFloat(item.cost),
+            user_id
         }));
 
         const { error: itemsError } = await supabase
@@ -562,9 +583,10 @@ export const getCustomers = async () => {
 };
 
 export const createCustomer = async (customerData) => {
+    const user_id = await getUserId();
     const { data, error } = await supabase
         .from('customers')
-        .insert(customerData)
+        .insert({ ...customerData, user_id })
         .select()
         .single();
     if (error) handleError(error, 'create customer');
@@ -611,6 +633,7 @@ export const getSalesOrders = async () => {
 };
 
 export const createSalesOrder = async (orderData) => {
+    const user_id = await getUserId();
     const { items, ...order } = orderData;
 
     // Calculate total amount
@@ -622,7 +645,7 @@ export const createSalesOrder = async (orderData) => {
 
     const { data: newOrder, error: orderError } = await supabase
         .from('sales_orders')
-        .insert(order)
+        .insert({ ...order, user_id })
         .select()
         .single();
 
@@ -631,7 +654,8 @@ export const createSalesOrder = async (orderData) => {
     if (items && items.length > 0) {
         const orderItems = items.map(item => ({
             order_id: newOrder.id,
-            ...item
+            ...item,
+            user_id
         }));
 
         const { error: itemsError } = await supabase
@@ -734,12 +758,14 @@ export const updateSalesOrder = async (id, updateData) => {
         await supabase.from('sales_order_items').delete().eq('order_id', id);
 
         // Insert new items
+        const user_id = await getUserId();
         const orderItems = updateData.items.map(item => ({
             order_id: id,
             recipe_id: parseInt(item.recipe_id),
             quantity: parseInt(item.quantity),
             unit_price: parseFloat(item.unit_price),
-            discount: parseFloat(item.discount || 0)
+            discount: parseFloat(item.discount || 0),
+            user_id
         }));
 
         const { error: itemsError } = await supabase
@@ -795,9 +821,10 @@ export const getExpenses = async () => {
 };
 
 export const createExpense = async (expenseData) => {
+    const user_id = await getUserId();
     const { data, error } = await supabase
         .from('expenses')
-        .insert(expenseData)
+        .insert({ ...expenseData, user_id })
         .select()
         .single();
     if (error) handleError(error, 'create expense');

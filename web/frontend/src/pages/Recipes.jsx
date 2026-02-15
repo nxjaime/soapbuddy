@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import {
     BookOpen,
     Plus,
@@ -30,6 +30,7 @@ import {
     deleteRecipe,
     createBatch
 } from '../api/client';
+import { computeQualities } from '../utils/soapMath';
 
 const RECIPE_TYPES = ['Soap', 'Lotion', 'Lip Balm', 'Body Butter', 'Other'];
 const LYE_TYPES = ['NaOH', 'KOH', 'Dual'];
@@ -68,6 +69,25 @@ export default function Recipes() {
         return () => clearTimeout(timer);
     }, [searchTerm]);
 
+    // Real-time quality recalculation when modal ingredients change
+    const qualityTimer = useRef(null);
+    useEffect(() => {
+        if (!isModalOpen) return;
+
+        // Debounce 300ms so we don't spam Supabase on every keystroke
+        clearTimeout(qualityTimer.current);
+        qualityTimer.current = setTimeout(async () => {
+            try {
+                const result = await computeQualities(formData.ingredients);
+                setQualities(result);
+            } catch (err) {
+                console.error('Quality calculation error:', err);
+            }
+        }, 300);
+
+        return () => clearTimeout(qualityTimer.current);
+    }, [formData.ingredients, isModalOpen]);
+
     async function loadRecipes() {
         try {
             setLoading(true);
@@ -94,7 +114,7 @@ export default function Recipes() {
             setEditingRecipe(recipe);
             setQualities(null); // Reset while loading
 
-            // Initial data from list
+            // Set initial form data from the recipe list
             setFormData({
                 name: recipe.name,
                 description: recipe.description || '',
@@ -113,16 +133,7 @@ export default function Recipes() {
                     unit: ing.unit
                 }))
             });
-
-            // Fetch full details with qualities
-            try {
-                const fullRecipe = await getRecipe(recipe.id);
-                if (fullRecipe && fullRecipe.qualities) {
-                    setQualities(fullRecipe.qualities);
-                }
-            } catch (err) {
-                console.error('Failed to load recipe details:', err);
-            }
+            // Qualities will be computed by the useEffect above
         } else {
             setEditingRecipe(null);
             setQualities(null);

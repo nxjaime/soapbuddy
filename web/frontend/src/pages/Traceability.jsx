@@ -10,19 +10,47 @@ import {
     MapPin,
     Search,
     Truck,
-    ClipboardList
+    ClipboardList,
+    Lock
 } from 'lucide-react';
 import {
     getBatches,
     getSupplyOrders
 } from '../api/client';
+import { useSubscription } from '../contexts/SubscriptionContext';
 
 export default function Traceability() {
+    const { meetsMinTier, tier } = useSubscription();
     const [batches, setBatches] = useState([]);
     const [supplyOrders, setSupplyOrders] = useState([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
     const [expandedBatch, setExpandedBatch] = useState(null);
+
+    // Gate: only manufacturer tier can access
+    if (!meetsMinTier('manufacturer')) {
+        return (
+            <div>
+                <div className="page-header">
+                    <h1 className="page-title">
+                        <FileSearch className="icon" />
+                        Traceability Report
+                    </h1>
+                </div>
+                <div className="card" style={{ padding: 'var(--spacing-xl)', textAlign: 'center' }}>
+                    <Lock size={48} style={{ color: 'var(--text-muted)', marginBottom: 'var(--spacing-md)', opacity: 0.5 }} />
+                    <h3 style={{ marginBottom: 'var(--spacing-sm)' }}>Manufacturer Feature</h3>
+                    <p style={{ color: 'var(--text-muted)', maxWidth: '400px', margin: '0 auto var(--spacing-md)' }}>
+                        Full batch traceability and supply chain tracking is available on the <strong>Manufacturer</strong> plan.
+                        Your current plan: <span className="badge badge-info">{tier}</span>
+                    </p>
+                    <button className="btn btn-primary" onClick={() => window.location.href = '/settings'}>
+                        Upgrade Plan
+                    </button>
+                </div>
+            </div>
+        );
+    }
 
     useEffect(() => {
         loadData();

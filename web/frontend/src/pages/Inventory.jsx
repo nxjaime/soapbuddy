@@ -11,7 +11,8 @@ import {
     ArrowRightLeft,
     Calendar,
     Filter,
-    Info
+    Info,
+    Lock
 } from 'lucide-react';
 import {
     getLocations,
@@ -26,9 +27,12 @@ import {
     transferInventory
 } from '../api/client';
 import { useSettings } from '../contexts/SettingsContext';
+import { useSubscription } from '../contexts/SubscriptionContext';
 
 export default function Inventory() {
     const { formatCurrency } = useSettings();
+    const { hasFeature } = useSubscription();
+    const canTransfer = hasFeature('inventoryTransfers');
     const [locations, setLocations] = useState([]);
     const [inventoryItems, setInventoryItems] = useState([]);
     const [recipes, setRecipes] = useState([]);
@@ -273,9 +277,9 @@ export default function Inventory() {
                     </button>
                     {activeTab === 'inventory' ? (
                         <div className="flex-responsive" style={{ gap: 'var(--spacing-sm)' }}>
-                            <button className="btn btn-secondary" onClick={() => openTransferModal()} disabled={inventoryItems.length === 0 || locations.length < 2}>
-                                <ArrowRightLeft size={18} />
-                                <span className="hide-on-mobile">Transfer</span>
+                            <button className="btn btn-secondary" onClick={() => openTransferModal()} disabled={!canTransfer || inventoryItems.length === 0 || locations.length < 2} title={!canTransfer ? 'Upgrade to Maker to transfer inventory' : ''}>
+                                {!canTransfer ? <Lock size={16} /> : <ArrowRightLeft size={18} />}
+                                <span className="hide-on-mobile">{!canTransfer ? 'Transfer (Maker)' : 'Transfer'}</span>
                             </button>
                             <button className="btn btn-primary" onClick={openMoveModal} disabled={completedBatches.length === 0 || locations.length === 0}>
                                 <Plus size={18} />
@@ -405,8 +409,8 @@ export default function Inventory() {
                                             </td>
                                             <td>
                                                 <div style={{ display: 'flex', gap: '4px' }}>
-                                                    <button className="btn-icon" onClick={() => openTransferModal(item)} title="Transfer" style={{ color: 'var(--color-info)' }}>
-                                                        <ArrowRightLeft size={16} />
+                                                    <button className="btn-icon" onClick={() => openTransferModal(item)} title={canTransfer ? 'Transfer' : 'Upgrade to Maker'} disabled={!canTransfer} style={{ color: canTransfer ? 'var(--color-info)' : 'var(--text-muted)' }}>
+                                                        {canTransfer ? <ArrowRightLeft size={16} /> : <Lock size={16} />}
                                                     </button>
                                                     <button className="btn-icon" onClick={() => handleDeleteItem(item.id)} title="Remove">
                                                         <Trash2 size={16} />

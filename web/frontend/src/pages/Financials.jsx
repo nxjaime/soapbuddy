@@ -11,7 +11,8 @@ import {
     Calendar,
     Download,
     Filter,
-    Clock
+    Clock,
+    Lock
 } from 'lucide-react';
 import {
     getSalesOrders,
@@ -19,8 +20,11 @@ import {
     getExpenses,
     getBatches
 } from '../api/client';
+import { useSubscription } from '../contexts/SubscriptionContext';
 
 export default function Financials() {
+    const { hasFeature, tier } = useSubscription();
+    const canSeeInsights = hasFeature('financialInsights');
     const [loading, setLoading] = useState(true);
     const [salesOrders, setSalesOrders] = useState([]);
     const [supplyOrders, setSupplyOrders] = useState([]);
@@ -283,7 +287,18 @@ export default function Financials() {
                 </div>
 
                 {/* Pending Revenue Card */}
-                <div className="card stat-card" style={{ padding: 'var(--spacing-md)' }}>
+                <div className="card stat-card" style={{ padding: 'var(--spacing-md)', position: 'relative' }}>
+                    {!canSeeInsights && (
+                        <div style={{
+                            position: 'absolute', inset: 0, backdropFilter: 'blur(8px)',
+                            background: 'rgba(0,0,0,0.3)', borderRadius: 'var(--radius-md)',
+                            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                            zIndex: 2, gap: '6px'
+                        }}>
+                            <Lock size={20} style={{ color: 'var(--text-muted)' }} />
+                            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Upgrade to Maker</span>
+                        </div>
+                    )}
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                         <div>
                             <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '4px' }}>
@@ -323,7 +338,18 @@ export default function Financials() {
                 </div>
 
                 {/* Net Profit Card */}
-                <div className="card stat-card" style={{ padding: 'var(--spacing-md)' }}>
+                <div className="card stat-card" style={{ padding: 'var(--spacing-md)', position: 'relative' }}>
+                    {!canSeeInsights && (
+                        <div style={{
+                            position: 'absolute', inset: 0, backdropFilter: 'blur(8px)',
+                            background: 'rgba(0,0,0,0.3)', borderRadius: 'var(--radius-md)',
+                            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                            zIndex: 2, gap: '6px'
+                        }}>
+                            <Lock size={20} style={{ color: 'var(--text-muted)' }} />
+                            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Upgrade to Maker</span>
+                        </div>
+                    )}
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                         <div>
                             <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '4px' }}>
