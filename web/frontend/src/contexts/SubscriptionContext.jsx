@@ -38,6 +38,7 @@ export function SubscriptionProvider({ children }) {
     const { user } = useAuth();
     const [tier, setTier] = useState('free');
     const [profile, setProfile] = useState(null);
+    const [isAdmin, setIsAdmin] = useState(false);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -59,9 +60,10 @@ export function SubscriptionProvider({ children }) {
             if (!error && data) {
                 setProfile(data);
                 setTier(data.plan_tier || 'free');
+                setIsAdmin(data.is_admin || false);
             } else {
-                // Profile might not exist yet (trigger delay), default to free
                 setTier('free');
+                setIsAdmin(false);
             }
             setLoading(false);
         };
@@ -80,6 +82,7 @@ export function SubscriptionProvider({ children }) {
                 if (payload.new) {
                     setProfile(payload.new);
                     setTier(payload.new.plan_tier || 'free');
+                    setIsAdmin(payload.new.is_admin || false);
                 }
             })
             .subscribe();
@@ -107,6 +110,7 @@ export function SubscriptionProvider({ children }) {
     const value = {
         tier,
         profile,
+        isAdmin,
         loading,
         features: TIER_FEATURES[tier] || TIER_FEATURES.free,
         hasFeature,

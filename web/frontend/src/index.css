@@ -1,5 +1,5 @@
-/* Import Google Font - must be first! */
-@import url('https://fonts.googleapis.com/css2?family=Merriweather+Sans:wght@300;400;500;600;700&display=swap');
+/* Import Google Font - Roboto Slab */
+@import url('https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@100..900&display=swap');
 
 :root {
   /* Color Palette - Deep Professional with warm accents */
@@ -63,7 +63,9 @@
   --transition-slow: 400ms ease;
 
   /* Typography */
-  font-family: 'Merriweather Sans', system-ui, -apple-system, sans-serif;
+  --font-ui: 'Roboto Slab', serif;
+  --font-display: 'Roboto Slab', serif;
+  font-family: var(--font-ui);
   line-height: 1.5;
   font-weight: 400;
   font-synthesis: none;
@@ -206,6 +208,18 @@ body,
   width: 100%;
 }
 
+h1,
+h2,
+h3,
+h4,
+.page-title,
+.card-title,
+.stat-value,
+.logo {
+  font-family: var(--font-display);
+  letter-spacing: -0.02em;
+}
+
 body {
   background: var(--gradient-dark);
   background-attachment: fixed;
@@ -284,6 +298,17 @@ body {
   background: var(--gradient-primary);
   color: white;
   box-shadow: var(--shadow-glow);
+}
+
+.sidebar-footer {
+  margin-top: auto;
+  padding-top: var(--spacing-md);
+  border-top: 1px solid var(--glass-border);
+}
+
+.logout-btn:hover {
+  background: rgba(239, 68, 68, 0.1) !important;
+  color: #ef4444 !important;
 }
 
 .nav-item svg {
@@ -963,6 +988,7 @@ body {
 
 /* ============ Mobile Responsive (768px) ============ */
 @media (max-width: 768px) {
+
   /* --- Layout: Sidebar & Main --- */
   .sidebar {
     transform: translateX(-100%);

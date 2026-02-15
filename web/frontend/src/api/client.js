@@ -5,6 +5,7 @@
  * All database operations go through Supabase's client library.
  */
 import { supabase } from '../lib/supabase';
+import { OIL_LIBRARY } from '../data/minimizedOilLibrary';
 
 // ============ Helper Functions ============
 
@@ -311,17 +312,47 @@ export const updateBatch = async (id, batchData) => {
 // ============ Lye Calculator ============
 
 export const calculateLye = async (request) => {
-    // Fetch ingredients with SAP values and Fatty Acid profiles from database
-    const { data: ingredientsData } = await supabase
-        .from('ingredients')
-        .select(`
-            *,
-            fatty_acid_profile:fatty_acid_profiles(*)
-        `)
-        .in('id', request.oils.map(o => o.ingredient_id));
+    // Separate library oils (numeric IDs) from database oils (UUIDs)
+    const libraryOilIds = request.oils.filter(o => typeof o.ingredient_id === 'number').map(o => o.ingredient_id);
+    const dbOilIds = request.oils.filter(o => typeof o.ingredient_id !== 'number').map(o => o.ingredient_id);
+
+    // Fetch database ingredients if any
+    let dbIngredients = [];
+    if (dbOilIds.length > 0) {
+        const { data } = await supabase
+            .from('ingredients')
+            .select(`*, fatty_acid_profile:fatty_acid_profiles(*)`)
+            .in('id', dbOilIds);
+        dbIngredients = data || [];
+    }
 
     const ingredientMap = {};
-    ingredientsData?.forEach(ing => {
+
+    // Add library oils to map
+    libraryOilIds.forEach(id => {
+        const oil = OIL_LIBRARY.find(o => o.id === id);
+        if (oil) {
+            ingredientMap[id] = {
+                id: oil.id,
+                name: oil.name,
+                sap_naoh: oil.sap,
+                sap_koh: oil.sap * 1.403,
+                fatty_acid_profile: {
+                    hardness: oil.palmitic + oil.stearic,
+                    cleansing: oil.lauric + oil.myristic,
+                    bubbly: oil.lauric + oil.myristic + (oil.ricinoleic || 0),
+                    conditioning: oil.oleic + oil.linoleic + oil.linolenic + (oil.ricinoleic || 0),
+                    creamy: oil.palmitic + oil.stearic + (oil.ricinoleic || 0),
+                    iodine: oil.iodine,
+                    ins: oil.ins,
+                    ...oil
+                }
+            };
+        }
+    });
+
+    // Add DB oils to map
+    dbIngredients.forEach(ing => {
         ingredientMap[ing.id] = ing;
     });
 
@@ -1144,3 +1175,26 @@ export const transferInventory = async (itemId, toLocationId, transferQty) => {
     }
 };
 
+// ============ Profiles (Admin) ============
+
+export const getProfiles = async () => {
+    ensureClient();
+    const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .order('created_at', { ascending: false });
+    if (error) handleError(error, 'get profiles');
+    return data;
+};
+
+export const updateProfileTier = async (userId, tier) => {
+    ensureClient();
+    const { data, error } = await supabase
+        .from('profiles')
+        .update({ plan_tier: tier })
+        .eq('id', userId)
+        .select()
+        .single();
+    if (error) handleError(error, 'update profile tier');
+    return data;
+};

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import ErrorBoundary from './ErrorBoundary';
 import { useSettings } from '../contexts/SettingsContext';
+import { useSubscription } from '../contexts/SubscriptionContext';
 import {
     LayoutDashboard,
     FlaskConical,
@@ -19,12 +20,25 @@ import {
     X,
     BarChart3,
     FileSearch,
-    Warehouse
+    Warehouse,
+    LogOut,
+    ShieldCheck
 } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function Layout() {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const { isTabVisible } = useSettings();
+    const { signOut } = useAuth();
+    const { isAdmin } = useSubscription();
+
+    const handleLogout = async () => {
+        try {
+            await signOut();
+        } catch (error) {
+            console.error('Error logging out:', error);
+        }
+    };
 
     const allNavItems = [
         { path: '/', icon: LayoutDashboard, label: 'Dashboard', alwaysVisible: true },
@@ -40,10 +54,14 @@ export default function Layout() {
         { path: '/expenses', icon: Receipt, label: 'Expenses' },
         { path: '/financials', icon: BarChart3, label: 'Financials' },
         { path: '/traceability', icon: FileSearch, label: 'Traceability' },
-        { path: '/settings', icon: SettingsIcon, label: 'Settings', alwaysVisible: true }
+        { path: '/settings', icon: SettingsIcon, label: 'Settings', alwaysVisible: true },
+        { path: '/admin', icon: ShieldCheck, label: 'Admin', isAdminOnly: true }
     ];
 
-    const navItems = allNavItems.filter(item => item.alwaysVisible || isTabVisible(item.path));
+    const navItems = allNavItems.filter(item => {
+        if (item.isAdminOnly && !isAdmin) return false;
+        return item.alwaysVisible || isTabVisible(item.path);
+    });
 
     return (
         <div className="app-layout">
@@ -82,6 +100,23 @@ export default function Layout() {
                         </NavLink>
                     ))}
                 </nav>
+
+                <div className="sidebar-footer">
+                    <button
+                        className="nav-item logout-btn"
+                        onClick={handleLogout}
+                        style={{
+                            width: '100%',
+                            background: 'none',
+                            border: 'none',
+                            cursor: 'pointer',
+                            color: 'var(--text-muted)'
+                        }}
+                    >
+                        <LogOut size={20} />
+                        <span>Logout</span>
+                    </button>
+                </div>
             </aside>
 
             <main className="main-content">

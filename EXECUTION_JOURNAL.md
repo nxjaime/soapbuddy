@@ -46,3 +46,24 @@
     - Confirmed functions `finalize_batch` and `receive_supply_order` are active in the database.
     - Verified Vercel deployment is live and correctly configured with environment variables.
 - Mission Accomplished.
+
+## 2026-02-15T07:10:00-06:00 - SaaS Transformation: Multi-tenancy & Feature Gating
+- Goal: Transform SoapBuddy into a multi-tenant SaaS with a 3-tier subscription model.
+- Database Security (RLS 2.0):
+    - Implemented strict per-user isolation using `USING (auth.uid() = user_id)` for all data tables.
+    - Added `user_id` columns to ingredients, recipes, production_batches, etc.
+    - Created `profiles` table to manage user plan tiers (free, maker, manufacturer).
+- Business Logic:
+    - Added trigger `handle_new_user()` on `auth.users` creation to auto-create profiles and seed 149 base oils.
+    - Added trigger `check_recipe_limit()` to enforce Free tier limits (max 3 recipes).
+- Frontend - Subscription Support:
+    - Created `SubscriptionContext.jsx` with `hasFeature()` and `meetsMinTier()` helpers.
+    - Modified `client.js` to inject `user_id` into all insert operations.
+- Feature Gating:
+    - `Traceability.jsx`: Full gate (Manufacturer tier only).
+    - `Financials.jsx`: Visual blur on Net Profit and Pending Revenue for Free tier.
+    - `Inventory.jsx`: Disabled Transfer functionality for Free tier.
+- Calculator Porting:
+    - Created `soapMath.js` to fetch fatty acid profiles and compute qualities client-side.
+    - Integrated real-time quality estimates into `Recipes.jsx` modal.
+- Verification: Successful Vite production build (2541 modules).

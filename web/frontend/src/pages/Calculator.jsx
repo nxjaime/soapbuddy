@@ -21,6 +21,7 @@ import {
     BookOpen
 } from 'lucide-react';
 import { getIngredients, calculateLye } from '../api/client';
+import { OIL_LIBRARY } from '../data/minimizedOilLibrary';
 
 export default function Calculator() {
     const [ingredients, setIngredients] = useState([]);
@@ -49,7 +50,16 @@ export default function Calculator() {
         try {
             const data = await getIngredients({ category: 'Base Oil' });
             const butters = await getIngredients({ category: 'Butter' });
-            setIngredients([...data, ...butters]);
+
+            // Map library oils to a consistent format
+            const masterLibrary = OIL_LIBRARY.map(oil => ({
+                id: oil.id,
+                name: oil.name,
+                sap_naoh: oil.sap,
+                is_library: true
+            }));
+
+            setIngredients([...masterLibrary, ...data, ...butters]);
         } catch (err) {
             console.error('Failed to load ingredients:', err);
         }

@@ -19,6 +19,7 @@ import Expenses from './pages/Expenses'
 import Financials from './pages/Financials'
 import Traceability from './pages/Traceability'
 import Settings from './pages/Settings'
+import Admin from './pages/Admin'
 import PrintRecipe from './pages/PrintRecipe'
 
 import { SettingsProvider } from './contexts/SettingsContext'
@@ -50,6 +51,7 @@ function App() {
               <Route path="financials" element={<Financials />} />
               <Route path="traceability" element={<Traceability />} />
               <Route path="settings" element={<Settings />} />
+              <Route path="admin" element={<Admin />} />
               <Route path="calculator/print" element={<PrintRecipe />} />
             </Route>
           </Routes>
