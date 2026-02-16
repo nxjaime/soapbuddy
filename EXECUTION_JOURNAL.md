@@ -116,6 +116,37 @@
     - Verified Vercel deployment is live and correctly configured with environment variables.
 - Mission Accomplished.
 
+## 2026-02-15 - Sprint 1: Inventory Intelligence
+
+### Commit: `0389a38` — pushed to nxjaime/soapbuddy main
+
+**Task 1.1 — DB Migration (`supabase/sprint1_inventory_intelligence.sql`)**
+- Added `reorder_threshold NUMERIC DEFAULT 0` to `ingredients`
+- Added `expiry_date DATE` (nullable) to `ingredients`
+- Created partial indexes for low-stock and expiry queries
+
+**Task 1.2 — LowStockBanner Component**
+- Created `LowStockBanner.jsx` — dismissible alerts on Dashboard
+- Shows count of ingredients at/below threshold and expiring within 30 days
+- Clicking navigates to `/ingredients?filter=low-stock` or `?filter=expiring`
+
+**Task 1.3 — Ingredients Form & Badges**
+- Added `reorder_threshold` number input and `expiry_date` date picker to add/edit modal
+- Replaced hardcoded `< 100` stock warning with per-ingredient threshold comparison
+- Added inline "Low", "Expiring Soon", "Expired" badges on stock column
+
+**Task 1.4 — ShoppingList Page**
+- Created `ShoppingList.jsx` — aggregates Planned batches, computes ingredient deficits
+- Shows estimated purchase cost per line item and total; includes Print button
+
+**Task 1.5 — Navigation**
+- Added `/shopping-list` route in `App.jsx`
+- Added "Shopping List" (ShoppingBag icon) to sidebar in `Layout.jsx` — all tiers
+
+**Build:** ✅ 2552 modules, zero errors (5.29s)
+
+---
+
 ## 2026-02-15T07:10:00-06:00 - SaaS Transformation: Multi-tenancy & Feature Gating
 - Goal: Transform SoapBuddy into a multi-tenant SaaS with a 3-tier subscription model.
 - Database Security (RLS 2.0):
@@ -136,3 +167,36 @@
     - Created `soapMath.js` to fetch fatty acid profiles and compute qualities client-side.
     - Integrated real-time quality estimates into `Recipes.jsx` modal.
 - Verification: Successful Vite production build (2541 modules).
+
+---
+
+## 2026-02-15 - Sprint 2: Recipe Power Tools
+
+### Task 2.1 — QualityChart.jsx (component extraction)
+- Extracted inline RadarChart from `Recipes.jsx` into standalone `components/QualityChart.jsx`
+- Accepts `qualities` prop; renders radar chart + numeric sidebar via recharts
+- `Recipes.jsx` now imports `<QualityChart qualities={qualities} />` — same behaviour, reusable component
+
+### Task 2.2 — Metric/US Unit Toggle
+- Added `formatWeight(grams)` helper to `SettingsContext.jsx` — converts to g/oz/kg/lb based on `settings.weightUnit`
+- Added Metric/US toggle button pair to `Settings.jsx` Preferences card (sets weightUnit to 'g' or 'oz')
+- Kept fine-grained unit selector dropdown below toggle for precise control
+- `formatWeight` exported from context for use in any future component
+
+### Task 2.3 — MoldManager page + molds table
+- Created `supabase/sprint2_molds.sql`: `molds` table with RLS (name, type, volume_ml, L/W/H dimensions, notes, user_id)
+- Created `pages/MoldManager.jsx`: full CRUD grid with add/edit modal; dimensions auto-calculate volume (L×W×H cm³ = mL)
+- Added `getMolds`, `createMold`, `updateMold`, `deleteMold` to `api/client.js`
+- Route `/molds` added to `App.jsx` (TierGate: production)
+- Nav item "Molds" (Box icon) added to `Layout.jsx` (featureId: production, Maker+)
+- `/molds` added to toggleable tabs list in `Settings.jsx`
+
+### Task 2.4 — Recipe Resizer Modal
+- Replaced `window.prompt()` in `handleResize()` with a React-controlled modal
+- Two resize modes: **By Target Weight** (manual input) or **By Mold** (select saved mold; oils weight ≈ volume × 0.65 g/mL)
+- Molds loaded on mount via `getMolds()`; "By Mold" button disabled if no molds exist
+- Scaling applies proportionally to all ingredient quantities and updates `total_oils_weight`
+
+**Build:** ✅ 2554 modules, zero errors (5.28s)
+
+**Reminder:** Run `supabase/sprint2_molds.sql` in Supabase SQL editor before testing MoldManager.

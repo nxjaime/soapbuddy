@@ -24,6 +24,7 @@ import Settings from './pages/Settings'
 import Admin from './pages/Admin'
 import PrintRecipe from './pages/PrintRecipe'
 import ShoppingList from './pages/ShoppingList'
+import MoldManager from './pages/MoldManager'
 
 import { SettingsProvider } from './contexts/SettingsContext'
 
@@ -74,6 +75,9 @@ function App() {
               <Route path="settings" element={<Settings />} />
               <Route path="admin" element={<Admin />} />
               <Route path="shopping-list" element={<ShoppingList />} />
+              <Route path="molds" element={
+                <TierGate featureId="production"><MoldManager /></TierGate>
+              } />
               <Route path="calculator/print" element={<PrintRecipe />} />
             </Route>
           </Routes>

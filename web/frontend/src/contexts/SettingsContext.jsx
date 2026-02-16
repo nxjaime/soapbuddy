@@ -67,13 +67,24 @@ export function SettingsProvider({ children }) {
         }
     };
 
+    const formatWeight = (grams) => {
+        const n = parseFloat(grams) || 0;
+        switch (settings.weightUnit) {
+            case 'oz': return `${(n / 28.3495).toFixed(2)} oz`;
+            case 'kg': return `${(n / 1000).toFixed(3)} kg`;
+            case 'lb': return `${(n / 453.592).toFixed(3)} lb`;
+            default:   return `${n.toFixed(1)} g`;
+        }
+    };
+
     return (
         <SettingsContext.Provider value={{
             settings,
             updateSettings,
             toggleTab,
             isTabVisible,
-            formatCurrency: (amount) => `${settings.currencySymbol}${Number(amount).toFixed(2)}`
+            formatCurrency: (amount) => `${settings.currencySymbol}${Number(amount).toFixed(2)}`,
+            formatWeight
         }}>
             {children}
         </SettingsContext.Provider>

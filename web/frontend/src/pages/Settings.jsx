@@ -27,7 +27,8 @@ import {
     XCircle,
     ArrowUpCircle,
     Zap,
-    Settings as SettingsIcon
+    Settings as SettingsIcon,
+    Box
 } from 'lucide-react';
 import { useSettings } from '../contexts/SettingsContext';
 import { useSubscription } from '../contexts/SubscriptionContext';
@@ -78,6 +79,7 @@ export default function Settings() {
         { path: '/expenses', icon: Receipt, label: 'Expenses' },
         { path: '/financials', icon: BarChart3, label: 'Financials' },
         { path: '/traceability', icon: FileSearch, label: 'Traceability' },
+        { path: '/molds', icon: Box, label: 'Molds' },
     ];
 
     if (!localSettings) return null;
@@ -173,7 +175,25 @@ export default function Settings() {
                             </div>
 
                             <div className="form-group">
-                                <label className="form-label">Default Weight Unit</label>
+                                <label className="form-label">Unit System</label>
+                                <div style={{ display: 'flex', gap: 'var(--spacing-sm)', marginBottom: 'var(--spacing-sm)' }}>
+                                    <button
+                                        type="button"
+                                        className={`btn ${['g', 'kg'].includes(localSettings.weightUnit || 'g') ? 'btn-primary' : 'btn-secondary'}`}
+                                        onClick={() => handleSettingChange({ target: { name: 'weightUnit', value: 'g' } })}
+                                        style={{ flex: 1 }}
+                                    >
+                                        Metric (g / kg)
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className={`btn ${['oz', 'lb'].includes(localSettings.weightUnit || 'g') ? 'btn-primary' : 'btn-secondary'}`}
+                                        onClick={() => handleSettingChange({ target: { name: 'weightUnit', value: 'oz' } })}
+                                        style={{ flex: 1 }}
+                                    >
+                                        US (oz / lb)
+                                    </button>
+                                </div>
                                 <select
                                     name="weightUnit"
                                     className="form-input form-select"

@@ -24,7 +24,8 @@ import {
     LogOut,
     ShieldCheck,
     Lock,
-    ShoppingBag
+    ShoppingBag,
+    Box
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -51,6 +52,7 @@ export default function Layout() {
         { path: '/production', icon: Factory, label: 'Production', featureId: 'production' },
         { path: '/inventory', icon: Warehouse, label: 'Inventory', featureId: 'inventory' },
         { path: '/shopping-list', icon: ShoppingBag, label: 'Shopping List', alwaysVisible: true },
+        { path: '/molds', icon: Box, label: 'Molds', featureId: 'production' },
         { path: '/suppliers', icon: Truck, label: 'Suppliers', featureId: 'supplyChain' },
         { path: '/supply-orders', icon: ShoppingCart, label: 'Supply Orders', featureId: 'supplyChain' },
         { path: '/customers', icon: Users, label: 'Customers', featureId: 'salesTracking' },

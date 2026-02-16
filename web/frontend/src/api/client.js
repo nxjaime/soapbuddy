@@ -1291,3 +1291,50 @@ export const updateProfileTier = async (userId, tier) => {
     if (error) handleError(error, 'update profile tier');
     return data;
 };
+
+// ============ Molds ============
+
+export const getMolds = async () => {
+    ensureClient();
+    const user_id = await getCurrentUserId();
+    const { data, error } = await supabase
+        .from('molds')
+        .select('*')
+        .eq('user_id', user_id)
+        .order('name');
+    if (error) handleError(error, 'get molds');
+    return data;
+};
+
+export const createMold = async (moldData) => {
+    ensureClient();
+    const user_id = await getCurrentUserId();
+    const { data, error } = await supabase
+        .from('molds')
+        .insert({ ...moldData, user_id })
+        .select()
+        .single();
+    if (error) handleError(error, 'create mold');
+    return data;
+};
+
+export const updateMold = async (id, moldData) => {
+    ensureClient();
+    const { data, error } = await supabase
+        .from('molds')
+        .update(moldData)
+        .eq('id', id)
+        .select()
+        .single();
+    if (error) handleError(error, 'update mold');
+    return data;
+};
+
+export const deleteMold = async (id) => {
+    ensureClient();
+    const { error } = await supabase
+        .from('molds')
+        .delete()
+        .eq('id', id);
+    if (error) handleError(error, 'delete mold');
+};

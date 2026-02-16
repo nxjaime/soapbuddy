@@ -8,20 +8,11 @@ import {
     X,
     FileText,
     Factory,
-    Activity,
     Scale,
     Info,
     Tag
 } from 'lucide-react';
-import {
-    Radar,
-    RadarChart,
-    PolarGrid,
-    PolarAngleAxis,
-    PolarRadiusAxis,
-    ResponsiveContainer,
-    Tooltip
-} from 'recharts';
+import QualityChart from '../components/QualityChart';
 import {
     getRecipes,
     getRecipe,
@@ -29,7 +20,8 @@ import {
     createRecipe,
     updateRecipe,
     deleteRecipe,
-    createBatch
+    createBatch,
+    getMolds
 } from '../api/client';
 import { computeQualities } from '../utils/soapMath';
 
@@ -51,6 +43,11 @@ export default function Recipes() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingRecipe, setEditingRecipe] = useState(null);
     const [qualities, setQualities] = useState(null);
+    const [molds, setMolds] = useState([]);
+    const [isResizeModalOpen, setIsResizeModalOpen] = useState(false);
+    const [resizeMode, setResizeMode] = useState('weight'); // 'weight' | 'mold'
+    const [resizeTargetWeight, setResizeTargetWeight] = useState('');
+    const [resizeSelectedMold, setResizeSelectedMold] = useState('');
     const [formData, setFormData] = useState({
         name: '',
         description: '',
@@ -68,6 +65,7 @@ export default function Recipes() {
 
     useEffect(() => {
         loadIngredients();
+        loadMolds();
     }, []);
 
     useEffect(() => {
@@ -114,6 +112,15 @@ export default function Recipes() {
             setIngredients(data);
         } catch (err) {
             console.error('Failed to load ingredients:', err);
+        }
+    }
+
+    async function loadMolds() {
+        try {
+            const data = await getMolds();
+            setMolds(data || []);
+        } catch (err) {
+            console.error('Failed to load molds:', err);
         }
     }
 
@@ -269,22 +276,38 @@ export default function Recipes() {
             alert('Add ingredients first to resize.');
             return;
         }
-
         const currentTotal = formData.ingredients.reduce((sum, ing) => sum + (parseFloat(ing.quantity) || 0), 0);
         if (currentTotal === 0) {
             alert('Current total weight is 0.');
             return;
         }
+        setResizeTargetWeight(String(currentTotal));
+        setResizeSelectedMold('');
+        setResizeMode('weight');
+        setIsResizeModalOpen(true);
+    }
 
-        const newWeightStr = prompt(`Current Total Oils: ${currentTotal}${formData.unit}\nEnter new Total Oils weight:`, currentTotal);
-        if (!newWeightStr) return;
+    function applyResize() {
+        let newWeight;
+        if (resizeMode === 'mold') {
+            const mold = molds.find(m => String(m.id) === String(resizeSelectedMold));
+            if (!mold || !mold.volume_ml) {
+                alert('Selected mold has no volume set.');
+                return;
+            }
+            // Oils fill roughly 38% of mold volume by weight (water:oils ~33%, lye ~5%)
+            // Simple approximation: oils weight ≈ mold volume * 0.65 g/mL
+            newWeight = parseFloat((mold.volume_ml * 0.65).toFixed(1));
+        } else {
+            newWeight = parseFloat(resizeTargetWeight);
+        }
 
-        const newWeight = parseFloat(newWeightStr);
         if (isNaN(newWeight) || newWeight <= 0) {
-            alert('Invalid weight entered.');
+            alert('Invalid target weight.');
             return;
         }
 
+        const currentTotal = formData.ingredients.reduce((sum, ing) => sum + (parseFloat(ing.quantity) || 0), 0);
         const ratio = newWeight / currentTotal;
 
         setFormData(prev => ({
@@ -295,6 +318,7 @@ export default function Recipes() {
                 quantity: parseFloat((ing.quantity * ratio).toFixed(2))
             }))
         }));
+        setIsResizeModalOpen(false);
     }
 
     const getIngredientName = (id) => {
@@ -439,6 +463,84 @@ export default function Recipes() {
                             </div>
                         </div>
                     ))}
+                </div>
+            )}
+
+            {/* Resize Modal */}
+            {isResizeModalOpen && (
+                <div className="modal-overlay" onClick={() => setIsResizeModalOpen(false)}>
+                    <div className="modal" style={{ maxWidth: '420px' }} onClick={e => e.stopPropagation()}>
+                        <div className="modal-header">
+                            <h2 className="modal-title">
+                                <Scale size={18} style={{ marginRight: '8px' }} />
+                                Resize Recipe
+                            </h2>
+                            <button className="btn-icon" onClick={() => setIsResizeModalOpen(false)}>
+                                <X size={20} />
+                            </button>
+                        </div>
+                        <div className="modal-body">
+                            <div style={{ display: 'flex', gap: 'var(--spacing-sm)', marginBottom: 'var(--spacing-lg)' }}>
+                                <button
+                                    type="button"
+                                    className={`btn ${resizeMode === 'weight' ? 'btn-primary' : 'btn-secondary'}`}
+                                    style={{ flex: 1 }}
+                                    onClick={() => setResizeMode('weight')}
+                                >
+                                    By Target Weight
+                                </button>
+                                <button
+                                    type="button"
+                                    className={`btn ${resizeMode === 'mold' ? 'btn-primary' : 'btn-secondary'}`}
+                                    style={{ flex: 1 }}
+                                    onClick={() => setResizeMode('mold')}
+                                    disabled={molds.length === 0}
+                                    title={molds.length === 0 ? 'No molds saved yet' : ''}
+                                >
+                                    By Mold
+                                </button>
+                            </div>
+
+                            {resizeMode === 'weight' ? (
+                                <div className="form-group">
+                                    <label className="form-label">New Total Oils Weight ({formData.unit})</label>
+                                    <input
+                                        type="number"
+                                        className="form-input"
+                                        value={resizeTargetWeight}
+                                        onChange={e => setResizeTargetWeight(e.target.value)}
+                                        min="1"
+                                        step="any"
+                                        autoFocus
+                                    />
+                                </div>
+                            ) : (
+                                <div className="form-group">
+                                    <label className="form-label">Select Mold</label>
+                                    <select
+                                        className="form-input form-select"
+                                        value={resizeSelectedMold}
+                                        onChange={e => setResizeSelectedMold(e.target.value)}
+                                    >
+                                        <option value="">Choose a mold...</option>
+                                        {molds.map(m => (
+                                            <option key={m.id} value={m.id}>
+                                                {m.name} ({m.volume_ml} mL → ~{(m.volume_ml * 0.65).toFixed(0)}g oils)
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                            )}
+                        </div>
+                        <div className="modal-footer">
+                            <button type="button" className="btn btn-secondary" onClick={() => setIsResizeModalOpen(false)}>
+                                Cancel
+                            </button>
+                            <button type="button" className="btn btn-primary" onClick={applyResize}>
+                                Apply Resize
+                            </button>
+                        </div>
+                    </div>
                 </div>
             )}
 
@@ -597,65 +699,7 @@ export default function Recipes() {
                                 </div>
 
                                 {/* Soap Qualities Chart */}
-                                {qualities && (
-                                    <div style={{ marginTop: 'var(--spacing-lg)', marginBottom: 'var(--spacing-lg)' }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', marginBottom: 'var(--spacing-sm)' }}>
-                                            <Activity size={16} style={{ marginRight: '8px' }} />
-                                            <h4 style={{ margin: 0, fontSize: '0.9rem' }}>Soap Qualities</h4>
-                                        </div>
-                                        <div style={{ height: '250px', width: '100%', background: 'var(--glass-bg)', borderRadius: 'var(--radius-md)', display: 'flex' }}>
-                                            <div style={{ flex: 1 }}>
-                                                <ResponsiveContainer width="100%" height="100%">
-                                                    <RadarChart cx="50%" cy="50%" outerRadius="70%" data={[
-                                                        { subject: 'Hardness', A: qualities.hardness, fullMark: 100 },
-                                                        { subject: 'Cleansing', A: qualities.cleansing, fullMark: 100 },
-                                                        { subject: 'Cond.', A: qualities.conditioning, fullMark: 100 },
-                                                        { subject: 'Bubbly', A: qualities.bubbly, fullMark: 100 },
-                                                        { subject: 'Creamy', A: qualities.creamy, fullMark: 100 },
-                                                    ]}>
-                                                        <PolarGrid stroke="#e5e7eb" strokeOpacity={0.2} />
-                                                        <PolarAngleAxis dataKey="subject" tick={{ fill: '#9ca3af', fontSize: 12 }} />
-                                                        <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
-                                                        <Radar
-                                                            name="Qualities"
-                                                            dataKey="A"
-                                                            stroke="#8b5cf6"
-                                                            strokeWidth={2}
-                                                            fill="#8b5cf6"
-                                                            fillOpacity={0.3}
-                                                        />
-                                                        <Tooltip
-                                                            contentStyle={{ backgroundColor: '#1f2937', borderColor: '#374151', color: '#f3f4f6' }}
-                                                            itemStyle={{ color: '#d1d5db' }}
-                                                        />
-                                                    </RadarChart>
-                                                </ResponsiveContainer>
-                                            </div>
-                                            <div style={{ width: '140px', padding: '16px', fontSize: '0.8rem', borderLeft: '1px solid var(--glass-border)', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                                                <div style={{ marginBottom: '8px' }}>
-                                                    <div style={{ color: 'var(--text-muted)' }}>Hardness</div>
-                                                    <div style={{ fontWeight: 600 }}>{qualities.hardness}</div>
-                                                </div>
-                                                <div style={{ marginBottom: '8px' }}>
-                                                    <div style={{ color: 'var(--text-muted)' }}>Cleansing</div>
-                                                    <div style={{ fontWeight: 600 }}>{qualities.cleansing}</div>
-                                                </div>
-                                                <div style={{ marginBottom: '8px' }}>
-                                                    <div style={{ color: 'var(--text-muted)' }}>Conditioning</div>
-                                                    <div style={{ fontWeight: 600 }}>{qualities.conditioning}</div>
-                                                </div>
-                                                <div style={{ marginBottom: '8px' }}>
-                                                    <div style={{ color: 'var(--text-muted)' }}>Bubbly</div>
-                                                    <div style={{ fontWeight: 600 }}>{qualities.bubbly}</div>
-                                                </div>
-                                                <div>
-                                                    <div style={{ color: 'var(--text-muted)' }}>Creamy</div>
-                                                    <div style={{ fontWeight: 600 }}>{qualities.creamy}</div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
+                                <QualityChart qualities={qualities} />
 
                                 {/* Recipe Ingredients */}
                                 <div style={{ marginTop: 'var(--spacing-lg)', paddingTop: 'var(--spacing-lg)', borderTop: '1px solid var(--glass-border)' }}>
