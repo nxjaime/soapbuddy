@@ -6,7 +6,11 @@ import {
     DollarSign,
     X,
     Trash2,
-    Edit3
+    Edit3,
+    Search,
+    TrendingUp,
+    ShoppingBag,
+    AlertCircle
 } from 'lucide-react';
 import {
     getSalesOrders,
@@ -28,11 +32,16 @@ export default function SalesOrders() {
     const [editingOrder, setEditingOrder] = useState(null);
     const [saving, setSaving] = useState(false);
 
+    // Filters
+    const [search, setSearch] = useState('');
+    const [statusFilter, setStatusFilter] = useState('');
+
     const [formData, setFormData] = useState({
         customer_id: '',
         status: 'Completed',
         payment_status: 'Paid',
         source_location_id: '',
+        sale_date: new Date().toISOString().split('T')[0],
         items: []
     });
 
@@ -66,6 +75,9 @@ export default function SalesOrders() {
                 status: order.status || 'Completed',
                 payment_status: order.payment_status || 'Paid',
                 source_location_id: '',
+                sale_date: order.sale_date
+                    ? new Date(order.sale_date).toISOString().split('T')[0]
+                    : new Date().toISOString().split('T')[0],
                 items: order.items?.map(i => ({
                     recipe_id: String(i.recipe_id),
                     quantity: i.quantity,
@@ -80,6 +92,7 @@ export default function SalesOrders() {
                 status: 'Completed',
                 payment_status: 'Paid',
                 source_location_id: '',
+                sale_date: new Date().toISOString().split('T')[0],
                 items: []
             });
         }
@@ -120,7 +133,6 @@ export default function SalesOrders() {
             return;
         }
 
-        // Validate location for statuses that need inventory
         if ((formData.status === 'Draft' || formData.status === 'Completed') && !editingOrder && !formData.source_location_id) {
             alert("Please select a source location for inventory deduction.");
             return;
@@ -132,6 +144,7 @@ export default function SalesOrders() {
                 ...formData,
                 customer_id: formData.customer_id ? parseInt(formData.customer_id) : null,
                 source_location_id: formData.source_location_id ? parseInt(formData.source_location_id) : null,
+                sale_date: new Date(formData.sale_date).toISOString(),
                 total_amount: formData.items.reduce(
                     (sum, item) => sum + (parseFloat(item.unit_price || 0) * parseFloat(item.quantity || 1)) - parseFloat(item.discount || 0), 0
                 ),
@@ -181,7 +194,6 @@ export default function SalesOrders() {
         }
     };
 
-    // Check if the current edit is a status change that requires location
     const needsSourceLocation = () => {
         if (!editingOrder) return formData.status === 'Draft' || formData.status === 'Completed';
         const oldStatus = editingOrder.status;
@@ -196,6 +208,24 @@ export default function SalesOrders() {
         return newStatus === 'Cancelled' && (oldStatus === 'Draft' || oldStatus === 'Completed');
     };
 
+    // Filtered orders
+    const filteredOrders = orders.filter(order => {
+        const customerName = getCustomerName(order.customer_id).toLowerCase();
+        const matchSearch = !search ||
+            customerName.includes(search.toLowerCase()) ||
+            String(order.id).includes(search);
+        const matchStatus = !statusFilter || order.status === statusFilter;
+        return matchSearch && matchStatus;
+    });
+
+    // KPI calculations
+    const completedOrders = orders.filter(o => o.status === 'Completed');
+    const totalRevenue = completedOrders.reduce((sum, o) => sum + (o.total_amount || 0), 0);
+    const unpaidTotal = orders
+        .filter(o => o.payment_status === 'Unpaid' || o.payment_status === 'Partial')
+        .reduce((sum, o) => sum + (o.total_amount || 0), 0);
+    const avgOrderValue = completedOrders.length > 0 ? totalRevenue / completedOrders.length : 0;
+
     return (
         <div>
             <div className="page-header">
@@ -209,23 +239,95 @@ export default function SalesOrders() {
                 </button>
             </div>
 
+            {/* KPI Summary Row */}
+            {!loading && orders.length > 0 && (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 'var(--spacing-md)', marginBottom: 'var(--spacing-lg)' }}>
+                    <div className="card" style={{ padding: 'var(--spacing-md)', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'rgba(34,197,94,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                            <TrendingUp size={20} style={{ color: 'var(--color-success)' }} />
+                        </div>
+                        <div>
+                            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Total Revenue</div>
+                            <div style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--color-success)' }}>${totalRevenue.toFixed(2)}</div>
+                        </div>
+                    </div>
+                    <div className="card" style={{ padding: 'var(--spacing-md)', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'rgba(99,102,241,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                            <ShoppingBag size={20} style={{ color: 'var(--color-primary)' }} />
+                        </div>
+                        <div>
+                            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Orders</div>
+                            <div style={{ fontSize: '1.25rem', fontWeight: 700 }}>{completedOrders.length} <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 400 }}>completed</span></div>
+                        </div>
+                    </div>
+                    <div className="card" style={{ padding: 'var(--spacing-md)', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'rgba(99,102,241,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                            <DollarSign size={20} style={{ color: 'var(--color-primary)' }} />
+                        </div>
+                        <div>
+                            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Avg Order Value</div>
+                            <div style={{ fontSize: '1.25rem', fontWeight: 700 }}>${avgOrderValue.toFixed(2)}</div>
+                        </div>
+                    </div>
+                    {unpaidTotal > 0 && (
+                        <div className="card" style={{ padding: 'var(--spacing-md)', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'rgba(239,68,68,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                <AlertCircle size={20} style={{ color: 'var(--color-error)' }} />
+                            </div>
+                            <div>
+                                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Unpaid / Partial</div>
+                                <div style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--color-error)' }}>${unpaidTotal.toFixed(2)}</div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {/* Search + Status Filter */}
+            <div style={{ display: 'flex', gap: 'var(--spacing-md)', marginBottom: 'var(--spacing-lg)' }}>
+                <div className="search-bar" style={{ flex: 1 }}>
+                    <Search className="search-icon" size={20} />
+                    <input
+                        type="text"
+                        className="search-input"
+                        placeholder="Search by customer or order ID..."
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                    />
+                </div>
+                <select
+                    className="form-input form-select"
+                    style={{ width: '160px' }}
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                >
+                    <option value="">All Statuses</option>
+                    <option value="Draft">Draft</option>
+                    <option value="Confirmed">Confirmed</option>
+                    <option value="Completed">Completed</option>
+                    <option value="Cancelled">Cancelled</option>
+                </select>
+            </div>
+
             {loading ? (
                 <div className="empty-state">
                     <div className="loading-spinner" />
                 </div>
-            ) : orders.length === 0 ? (
+            ) : filteredOrders.length === 0 ? (
                 <div className="empty-state">
                     <DollarSign size={48} style={{ marginBottom: '16px', color: 'var(--text-muted)', opacity: 0.5 }} />
                     <h3>No sales orders found</h3>
-                    <p>Record a sale to track your revenue.</p>
-                    <button className="btn btn-primary" onClick={() => openModal()}>
-                        <Plus size={18} />
-                        New Order
-                    </button>
+                    <p>{search || statusFilter ? 'Try adjusting your filters.' : 'Record a sale to track your revenue.'}</p>
+                    {!search && !statusFilter && (
+                        <button className="btn btn-primary" onClick={() => openModal()}>
+                            <Plus size={18} />
+                            New Order
+                        </button>
+                    )}
                 </div>
             ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-md)' }}>
-                    {orders.map(order => (
+                    {filteredOrders.map(order => (
                         <div key={order.id} className="card" style={{ padding: 0, overflow: 'hidden' }}>
                             <div
                                 style={{
@@ -340,6 +442,19 @@ export default function SalesOrders() {
                                         </select>
                                     </div>
                                     <div className="form-group" style={{ flex: 1 }}>
+                                        <label className="form-label">Sale Date</label>
+                                        <input
+                                            type="date"
+                                            className="form-input"
+                                            value={formData.sale_date}
+                                            onChange={(e) => setFormData({ ...formData, sale_date: e.target.value })}
+                                            required
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="form-row">
+                                    <div className="form-group" style={{ flex: 1 }}>
                                         <label className="form-label">Status</label>
                                         <select
                                             className="form-input form-select"
@@ -352,9 +467,6 @@ export default function SalesOrders() {
                                             <option value="Cancelled">Cancelled</option>
                                         </select>
                                     </div>
-                                </div>
-
-                                <div className="form-row">
                                     <div className="form-group" style={{ flex: 1 }}>
                                         <label className="form-label">Payment Status</label>
                                         <select

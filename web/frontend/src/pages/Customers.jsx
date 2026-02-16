@@ -6,25 +6,32 @@ import {
     Edit2,
     Mail,
     Phone,
-    MapPin,
     Briefcase,
     User,
-    X
+    X,
+    Trash2,
+    ShoppingBag,
+    DollarSign,
+    ChevronDown,
+    ChevronUp
 } from 'lucide-react';
 import {
     getCustomers,
     createCustomer,
-    updateCustomer
+    updateCustomer,
+    deleteCustomer,
+    getSalesOrders
 } from '../api/client';
 
 export default function Customers() {
     const [customers, setCustomers] = useState([]);
+    const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingCustomer, setEditingCustomer] = useState(null);
+    const [expandedCustomer, setExpandedCustomer] = useState(null);
 
-    // Form Data
     const [formData, setFormData] = useState({
         name: '',
         email: '',
@@ -35,19 +42,38 @@ export default function Customers() {
     });
 
     useEffect(() => {
-        loadCustomers();
+        loadData();
     }, []);
 
-    async function loadCustomers() {
+    async function loadData() {
         try {
             setLoading(true);
-            const data = await getCustomers();
-            setCustomers(data);
+            const [customersData, ordersData] = await Promise.all([
+                getCustomers(),
+                getSalesOrders()
+            ]);
+            setCustomers(customersData);
+            setOrders(ordersData);
         } catch (err) {
-            console.error('Failed to load customers:', err);
+            console.error('Failed to load data:', err);
         } finally {
             setLoading(false);
         }
+    }
+
+    // Compute per-customer stats from the loaded orders
+    function getCustomerStats(customerId) {
+        const customerOrders = orders.filter(
+            o => o.customer_id === customerId && o.status !== 'Cancelled'
+        );
+        const totalSpend = customerOrders.reduce((sum, o) => sum + (o.total_amount || 0), 0);
+        return { orderCount: customerOrders.length, totalSpend };
+    }
+
+    function getCustomerOrders(customerId) {
+        return orders
+            .filter(o => o.customer_id === customerId)
+            .sort((a, b) => new Date(b.sale_date) - new Date(a.sale_date));
     }
 
     function openModal(customer = null) {
@@ -89,12 +115,36 @@ export default function Customers() {
                 await createCustomer(formData);
             }
             closeModal();
-            loadCustomers();
+            loadData();
         } catch (err) {
             console.error('Failed to save customer:', err);
             alert('Failed to save customer: ' + err.message);
         }
     }
+
+    async function handleDelete(customer) {
+        const { orderCount } = getCustomerStats(customer.id);
+        const confirmMsg = orderCount > 0
+            ? `Delete "${customer.name}"? They have ${orderCount} order(s). The orders will remain but be unlinked.`
+            : `Delete "${customer.name}"?`;
+        if (!confirm(confirmMsg)) return;
+        try {
+            await deleteCustomer(customer.id);
+            loadData();
+        } catch (err) {
+            console.error('Failed to delete customer:', err);
+            alert('Failed to delete customer: ' + err.message);
+        }
+    }
+
+    const getStatusBadge = (status) => {
+        switch (status) {
+            case 'Completed': return 'badge-green';
+            case 'Draft': return 'badge-yellow';
+            case 'Cancelled': return 'badge-red';
+            default: return 'badge-blue';
+        }
+    };
 
     const filteredCustomers = customers.filter(c =>
         c.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -143,63 +193,144 @@ export default function Customers() {
                     )}
                 </div>
             ) : (
-                <div className="grid-view">
-                    {filteredCustomers.map(customer => (
-                        <div key={customer.id} className="card customer-card">
-                            <div className="card-header" style={{ marginBottom: '12px' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', overflow: 'hidden' }}>
-                                    <div style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        width: '40px',
-                                        height: '40px',
-                                        borderRadius: '50%',
-                                        background: 'var(--color-bg)',
-                                        color: 'var(--color-primary)'
-                                    }}>
-                                        {customer.customer_type === 'Wholesale' ? <Briefcase size={20} /> : <User size={20} />}
-                                    </div>
-                                    <div style={{ overflow: 'hidden' }}>
-                                        <h3 className="card-title" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                            {customer.name}
-                                        </h3>
-                                        <div className={`badge ${customer.customer_type === 'Wholesale' ? 'badge-purple' : 'badge-blue'}`} style={{ fontSize: '0.75rem', marginTop: '4px' }}>
-                                            {customer.customer_type}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-md)' }}>
+                    {filteredCustomers.map(customer => {
+                        const { orderCount, totalSpend } = getCustomerStats(customer.id);
+                        const isExpanded = expandedCustomer === customer.id;
+                        const customerOrders = isExpanded ? getCustomerOrders(customer.id) : [];
+
+                        return (
+                            <div key={customer.id} className="card" style={{ padding: 0, overflow: 'hidden' }}>
+                                {/* Customer Row */}
+                                <div style={{ padding: 'var(--spacing-md)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+                                    {/* Avatar + Name */}
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, overflow: 'hidden' }}>
+                                        <div style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            width: '44px',
+                                            height: '44px',
+                                            borderRadius: '50%',
+                                            background: 'var(--glass-bg)',
+                                            color: 'var(--color-primary)',
+                                            flexShrink: 0
+                                        }}>
+                                            {customer.customer_type === 'Wholesale' ? <Briefcase size={20} /> : <User size={20} />}
+                                        </div>
+                                        <div style={{ overflow: 'hidden' }}>
+                                            <div style={{ fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                                {customer.name}
+                                            </div>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginTop: '4px' }}>
+                                                <span className={`badge ${customer.customer_type === 'Wholesale' ? 'badge-purple' : 'badge-blue'}`} style={{ fontSize: '0.72rem' }}>
+                                                    {customer.customer_type}
+                                                </span>
+                                                {customer.email && (
+                                                    <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                        <Mail size={12} /> {customer.email}
+                                                    </span>
+                                                )}
+                                                {customer.phone && (
+                                                    <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                        <Phone size={12} /> {customer.phone}
+                                                    </span>
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                                <button
-                                    className="btn-icon"
-                                    onClick={() => openModal(customer)}
-                                    title="Edit"
-                                >
-                                    <Edit2 size={16} />
-                                </button>
-                            </div>
 
-                            <div className="card-content" style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
-                                {customer.email && (
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                                        <Mail size={14} />
-                                        <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{customer.email}</span>
+                                    {/* Stats */}
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-lg)', flexShrink: 0 }}>
+                                        <div style={{ textAlign: 'center', minWidth: '60px' }}>
+                                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '2px' }}>Orders</div>
+                                            <div style={{ fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
+                                                <ShoppingBag size={14} style={{ color: 'var(--color-primary)' }} />
+                                                {orderCount}
+                                            </div>
+                                        </div>
+                                        <div style={{ textAlign: 'center', minWidth: '70px' }}>
+                                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '2px' }}>Lifetime</div>
+                                            <div style={{ fontWeight: 600, color: 'var(--color-success)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '2px' }}>
+                                                <DollarSign size={14} />
+                                                {totalSpend.toFixed(2)}
+                                            </div>
+                                        </div>
                                     </div>
-                                )}
-                                {customer.phone && (
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                                        <Phone size={14} />
-                                        <span>{customer.phone}</span>
+
+                                    {/* Actions */}
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
+                                        <button
+                                            className="btn-icon"
+                                            onClick={() => openModal(customer)}
+                                            title="Edit"
+                                        >
+                                            <Edit2 size={16} />
+                                        </button>
+                                        <button
+                                            className="btn-icon"
+                                            onClick={() => handleDelete(customer)}
+                                            title="Delete"
+                                            style={{ color: 'var(--color-error)' }}
+                                        >
+                                            <Trash2 size={16} />
+                                        </button>
+                                        {orderCount > 0 && (
+                                            <button
+                                                className="btn-icon"
+                                                onClick={() => setExpandedCustomer(isExpanded ? null : customer.id)}
+                                                title={isExpanded ? 'Hide orders' : 'View orders'}
+                                                style={{ color: 'var(--color-info)' }}
+                                            >
+                                                {isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+                                            </button>
+                                        )}
                                     </div>
-                                )}
-                                {customer.address && (
-                                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', marginBottom: '8px' }}>
-                                        <MapPin size={14} style={{ marginTop: '2px', flexShrink: 0 }} />
-                                        <span style={{ lineHeight: '1.4' }}>{customer.address}</span>
+                                </div>
+
+                                {/* Inline Order History */}
+                                {isExpanded && (
+                                    <div style={{ borderTop: '1px solid var(--glass-border)', background: 'rgba(0,0,0,0.08)', padding: 'var(--spacing-md)' }}>
+                                        <h4 style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: 'var(--spacing-sm)' }}>
+                                            Order History
+                                        </h4>
+                                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.88rem' }}>
+                                            <thead>
+                                                <tr style={{ color: 'var(--text-muted)', textAlign: 'left' }}>
+                                                    <th style={{ paddingBottom: '8px' }}>Date</th>
+                                                    <th style={{ paddingBottom: '8px' }}>Status</th>
+                                                    <th style={{ paddingBottom: '8px' }}>Payment</th>
+                                                    <th style={{ paddingBottom: '8px', textAlign: 'right' }}>Total</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {customerOrders.map(order => (
+                                                    <tr key={order.id} style={{ borderTop: '1px solid var(--glass-border)' }}>
+                                                        <td style={{ padding: '8px 0' }}>
+                                                            {new Date(order.sale_date).toLocaleDateString()}
+                                                        </td>
+                                                        <td style={{ padding: '8px 0' }}>
+                                                            <span className={`badge ${getStatusBadge(order.status)}`} style={{ fontSize: '0.75rem' }}>
+                                                                {order.status}
+                                                            </span>
+                                                        </td>
+                                                        <td style={{ padding: '8px 0' }}>
+                                                            <span className={`badge ${order.payment_status === 'Paid' ? 'badge-green' : 'badge-yellow'}`} style={{ fontSize: '0.75rem' }}>
+                                                                {order.payment_status}
+                                                            </span>
+                                                        </td>
+                                                        <td style={{ padding: '8px 0', textAlign: 'right', fontWeight: 600 }}>
+                                                            ${(order.total_amount || 0).toFixed(2)}
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
                                     </div>
                                 )}
                             </div>
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
             )}
 
