@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import {
     Factory,
     Plus,
@@ -7,18 +7,70 @@ import {
     Clock,
     CheckCircle2,
     XCircle,
-    Package
+    Package,
+    TrendingUp,
+    ChevronUp,
+    ChevronDown
 } from 'lucide-react';
 import { getBatches, getRecipes, createBatch, updateBatch, startBatch, completeBatch } from '../api/client';
+import { useSubscription } from '../contexts/SubscriptionContext';
 
 const STATUS_OPTIONS = ['Planned', 'In Progress', 'Curing', 'Complete', 'Cancelled'];
 
 export default function Production() {
+    const { hasFeature } = useSubscription();
+    const canSeeAnalytics = hasFeature('production');
+
     const [batches, setBatches] = useState([]);
     const [recipes, setRecipes] = useState([]);
     const [loading, setLoading] = useState(true);
     const [statusFilter, setStatusFilter] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [showEfficiency, setShowEfficiency] = useState(false);
+
+    const efficiencyStats = useMemo(() => {
+        const completedBatches = batches.filter(b => b.status === 'Complete' && b.yield_quantity > 0);
+
+        if (completedBatches.length === 0) return null;
+
+        const batchesWithCost = completedBatches.map(b => ({
+            id: b.id,
+            name: b.recipe?.name || 'Unknown',
+            yield: b.yield_quantity,
+            cost: b.total_cost || 0,
+            costPerUnit: b.total_cost && b.yield_quantity > 0
+                ? (b.total_cost / b.yield_quantity)
+                : 0,
+            month: new Date(b.created_at).toLocaleDateString('en-US', { month: 'short', year: '2-digit' })
+        }));
+
+        const avgCostPerUnit = batchesWithCost.length > 0
+            ? batchesWithCost.reduce((sum, b) => sum + b.costPerUnit, 0) / batchesWithCost.length
+            : 0;
+
+        const totalUnitsProduced = completedBatches.reduce((sum, b) => sum + b.yield_quantity, 0);
+
+        // Monthly production volumes (last 6 months)
+        const now = new Date();
+        const monthlyVolume = [];
+        for (let i = 5; i >= 0; i--) {
+            const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+            const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+            const label = d.toLocaleDateString('en-US', { month: 'short' });
+            const units = completedBatches
+                .filter(b => {
+                    const bd = new Date(b.created_at);
+                    return `${bd.getFullYear()}-${String(bd.getMonth() + 1).padStart(2, '0')}` === key;
+                })
+                .reduce((sum, b) => sum + b.yield_quantity, 0);
+            monthlyVolume.push({ label, units });
+        }
+
+        const maxVolume = Math.max(...monthlyVolume.map(m => m.units), 1);
+
+        return { batchesWithCost, avgCostPerUnit, totalUnitsProduced, monthlyVolume, maxVolume };
+    }, [batches]);
+
     const [formData, setFormData] = useState({
         recipe_id: '',
         lot_number: '',
@@ -281,6 +333,78 @@ export default function Production() {
                             })}
                         </tbody>
                     </table>
+                </div>
+            )}
+
+            {canSeeAnalytics && efficiencyStats && (
+                <div className="card" style={{ marginTop: 'var(--spacing-lg)', overflow: 'hidden' }}>
+                    <div
+                        style={{ padding: 'var(--spacing-md)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}
+                        onClick={() => setShowEfficiency(prev => !prev)}
+                    >
+                        <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <TrendingUp size={20} />
+                            Production Efficiency
+                        </h3>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-lg)' }}>
+                            <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                                {efficiencyStats.totalUnitsProduced} units produced · avg ${efficiencyStats.avgCostPerUnit.toFixed(2)}/unit
+                            </span>
+                            {showEfficiency ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                        </div>
+                    </div>
+                    {showEfficiency && (
+                        <div style={{ padding: '0 var(--spacing-md) var(--spacing-md)' }}>
+                            {/* Monthly volume mini chart */}
+                            <h4 style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: 'var(--spacing-sm)' }}>
+                                Monthly Production Volume (units)
+                            </h4>
+                            <div style={{ display: 'flex', gap: 'var(--spacing-sm)', height: '80px', alignItems: 'flex-end', marginBottom: 'var(--spacing-lg)' }}>
+                                {efficiencyStats.monthlyVolume.map((month, idx) => (
+                                    <div key={idx} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+                                        <div style={{
+                                            width: '100%',
+                                            height: `${(month.units / efficiencyStats.maxVolume) * 60}px`,
+                                            background: 'linear-gradient(180deg, var(--color-primary), var(--color-secondary))',
+                                            borderRadius: '4px 4px 0 0',
+                                            minHeight: month.units > 0 ? '4px' : '0'
+                                        }} title={`${month.units} units`} />
+                                        <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{month.label}</div>
+                                    </div>
+                                ))}
+                            </div>
+
+                            {/* Per-batch cost table */}
+                            <h4 style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: 'var(--spacing-sm)' }}>
+                                Cost Per Unit by Batch
+                            </h4>
+                            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem' }}>
+                                <thead>
+                                    <tr style={{ color: 'var(--text-muted)', textAlign: 'left', borderBottom: '1px solid var(--glass-border)' }}>
+                                        <th style={{ padding: '8px 0' }}>Recipe</th>
+                                        <th style={{ padding: '8px 0' }}>Units</th>
+                                        <th style={{ padding: '8px 0', textAlign: 'right' }}>Total Cost</th>
+                                        <th style={{ padding: '8px 0', textAlign: 'right' }}>Cost/Unit</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {efficiencyStats.batchesWithCost.slice(0, 10).map(b => (
+                                        <tr key={b.id} style={{ borderBottom: '1px solid var(--glass-border)' }}>
+                                            <td style={{ padding: '8px 0' }}>{b.name}</td>
+                                            <td style={{ padding: '8px 0' }}>{b.yield}</td>
+                                            <td style={{ padding: '8px 0', textAlign: 'right' }}>${b.cost.toFixed(2)}</td>
+                                            <td style={{ padding: '8px 0', textAlign: 'right', fontWeight: 600, color: b.costPerUnit > efficiencyStats.avgCostPerUnit ? 'var(--color-error)' : 'var(--color-success)' }}>
+                                                ${b.costPerUnit.toFixed(2)}
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                            <div style={{ marginTop: 'var(--spacing-sm)', fontSize: '0.82rem', color: 'var(--text-muted)', textAlign: 'right' }}>
+                                Cost/unit highlighted red when above average (${efficiencyStats.avgCostPerUnit.toFixed(2)})
+                            </div>
+                        </div>
+                    )}
                 </div>
             )}
 
