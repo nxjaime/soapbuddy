@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import {
     Users,
     Plus,
@@ -13,7 +13,8 @@ import {
     ShoppingBag,
     DollarSign,
     ChevronDown,
-    ChevronUp
+    ChevronUp,
+    AlertTriangle
 } from 'lucide-react';
 import {
     getCustomers,
@@ -22,6 +23,7 @@ import {
     deleteCustomer,
     getSalesOrders
 } from '../api/client';
+import { useSubscription } from '../contexts/SubscriptionContext';
 
 export default function Customers() {
     const [customers, setCustomers] = useState([]);
@@ -31,6 +33,9 @@ export default function Customers() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingCustomer, setEditingCustomer] = useState(null);
     const [expandedCustomer, setExpandedCustomer] = useState(null);
+
+    const { hasFeature } = useSubscription();
+    const canSeeAnalytics = hasFeature('salesTracking');
 
     const [formData, setFormData] = useState({
         name: '',
@@ -75,6 +80,59 @@ export default function Customers() {
             .filter(o => o.customer_id === customerId)
             .sort((a, b) => new Date(b.sale_date) - new Date(a.sale_date));
     }
+
+    const retentionStats = useMemo(() => {
+        const customersWithOrders = customers.filter(c => {
+            const customerOrders = orders.filter(
+                o => o.customer_id === c.id && o.status !== 'Cancelled'
+            );
+            return customerOrders.length > 0;
+        });
+
+        const repeatBuyers = customers.filter(c => {
+            const customerOrders = orders.filter(
+                o => o.customer_id === c.id && o.status !== 'Cancelled'
+            );
+            return customerOrders.length > 1;
+        });
+
+        const sixtyDaysAgo = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000);
+        const atRisk = customers.filter(c => {
+            const customerOrders = orders.filter(
+                o => o.customer_id === c.id && o.status !== 'Cancelled'
+            );
+            if (customerOrders.length === 0) return false;
+            const lastOrder = customerOrders.reduce((latest, o) =>
+                new Date(o.sale_date) > new Date(latest.sale_date) ? o : latest
+            );
+            return new Date(lastOrder.sale_date) < sixtyDaysAgo;
+        });
+
+        const retailRevenue = orders
+            .filter(o => {
+                const c = customers.find(c => c.id === o.customer_id);
+                return c && c.customer_type === 'Retail' && o.status !== 'Cancelled';
+            })
+            .reduce((sum, o) => sum + (o.total_amount || 0), 0);
+
+        const wholesaleRevenue = orders
+            .filter(o => {
+                const c = customers.find(c => c.id === o.customer_id);
+                return c && c.customer_type === 'Wholesale' && o.status !== 'Cancelled';
+            })
+            .reduce((sum, o) => sum + (o.total_amount || 0), 0);
+
+        return {
+            totalWithOrders: customersWithOrders.length,
+            repeatBuyers: repeatBuyers.length,
+            repeatRate: customersWithOrders.length > 0
+                ? (repeatBuyers.length / customersWithOrders.length) * 100
+                : 0,
+            atRisk,
+            retailRevenue,
+            wholesaleRevenue
+        };
+    }, [customers, orders]);
 
     function openModal(customer = null) {
         if (customer) {
@@ -163,6 +221,51 @@ export default function Customers() {
                     New Customer
                 </button>
             </div>
+
+            {!loading && canSeeAnalytics && customers.length > 0 && (
+                <div style={{ marginBottom: 'var(--spacing-lg)' }}>
+                    {/* Retention Stats Row */}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 'var(--spacing-md)', marginBottom: 'var(--spacing-md)' }}>
+                        <div className="card" style={{ padding: 'var(--spacing-md)' }}>
+                            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '4px' }}>Repeat Buyers</div>
+                            <div style={{ fontSize: '1.4rem', fontWeight: 700 }}>{retentionStats.repeatBuyers}</div>
+                            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                                {retentionStats.repeatRate.toFixed(0)}% of buyers
+                            </div>
+                            <div style={{ height: '4px', background: 'var(--glass-bg)', borderRadius: '2px', marginTop: '8px', overflow: 'hidden' }}>
+                                <div style={{ height: '100%', width: `${retentionStats.repeatRate}%`, background: 'var(--color-primary)', borderRadius: '2px' }} />
+                            </div>
+                        </div>
+                        <div className="card" style={{ padding: 'var(--spacing-md)' }}>
+                            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '4px' }}>Retail Revenue</div>
+                            <div style={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--color-success)' }}>
+                                ${retentionStats.retailRevenue.toFixed(2)}
+                            </div>
+                        </div>
+                        <div className="card" style={{ padding: 'var(--spacing-md)' }}>
+                            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '4px' }}>Wholesale Revenue</div>
+                            <div style={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--color-primary)' }}>
+                                ${retentionStats.wholesaleRevenue.toFixed(2)}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* At-Risk Customers */}
+                    {retentionStats.atRisk.length > 0 && (
+                        <div className="card" style={{ padding: 'var(--spacing-md)', borderLeft: '3px solid var(--color-warning)' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: 'var(--spacing-sm)', color: 'var(--color-warning)', fontWeight: 600 }}>
+                                <AlertTriangle size={16} />
+                                {retentionStats.atRisk.length} customer{retentionStats.atRisk.length > 1 ? 's' : ''} haven't ordered in 60+ days
+                            </div>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                                {retentionStats.atRisk.map(c => (
+                                    <span key={c.id} className="badge badge-yellow">{c.name}</span>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                </div>
+            )}
 
             {/* Search */}
             <div className="search-bar">
