@@ -200,3 +200,80 @@
 **Build:** ✅ 2554 modules, zero errors (5.28s)
 
 **Reminder:** Run `supabase/sprint2_molds.sql` in Supabase SQL editor before testing MoldManager.
+
+---
+
+## 2026-02-15 - Sprint 3: Sales & Customer Ops
+
+### Commit: `c4f3ff3` — pushed to nxjaime/soapbuddy main
+
+**Task 3.1 — SalesOrders enhancements**
+- Added `sale_date` date picker to create/edit modal — allows backdating historical sales
+- Added KPI summary bar (shown when orders exist): Total Revenue, Completed Order Count, Avg Order Value, Unpaid/Partial total
+- Added search bar (filter by customer name or order ID) and status dropdown filter
+- KPIs computed client-side from the already-loaded orders array
+
+**Task 3.2 — Customers enhancements**
+- Refactored layout from card grid to expandable list rows (consistent with SalesOrders/Production pattern)
+- Each row shows live **order count** and **lifetime spend** computed from `getSalesOrders()` parallel fetch
+- Added **delete customer** button with contextual confirmation (warns when customer has existing orders)
+- Added **inline order history** panel — click chevron to expand per-customer order table (date, status, payment, total)
+- `getCustomerStats()` and `getCustomerOrders()` are pure client-side helpers — no additional DB queries
+
+**Task 3.3 — Recipe default_price field**
+- Already fully implemented in Sprint 2: form input, state, save, and display on recipe card all present in `Recipes.jsx`
+- Verified wiring into `SalesOrders.jsx` item selection (auto-fills `unit_price` from `recipe.default_price`)
+
+**Build:** ✅ 2554 modules, zero errors (5.32s)
+
+---
+
+## 2026-02-15 - Sprint 4: Reports & Analytics
+
+### Commit: `f4f7890` — pushed to nxjaime/soapbuddy main
+
+**Task 4.1 — Customers Retention Panel**
+- Added `retentionStats` useMemo (repeat rate, segment revenue, at-risk list)
+- Added inline analytics panel above customer list with repeat rate bar and revenue cards
+- Gated behind `salesTracking` feature (Maker+ tier)
+
+**Task 4.2 — Recipes Product Performance Panel**
+- Refactored `Recipes.jsx` to load `salesOrders` in parallel fetch
+- Added `productStats` useMemo to rank products by total revenue
+- Added "Top Seller" badge to the highest-revenue recipe card
+- Added collapsible "Product Performance" panel with detailed sales table
+
+**Task 4.3 — Production Efficiency Panel**
+- Added `efficiencyStats` useMemo (cost/unit, monthly production volume)
+- Created "Production Efficiency" panel with monthly bar chart (last 6 months)
+- Added per-batch cost table with visual highlighting for above-average costs
+- Gated behind `production` feature (Maker+ tier)
+
+**Build:** ✅ 2554 modules, zero errors (5.12s)
+
+---
+
+## 2026-02-15 - Sprint 5: Settings & Data
+
+### Commit: (incoming) — pushed to nxjaime/soapbuddy main
+
+**Task 5.1 — DB Schema & Migration**
+- Added `settings` JSONB column to `profiles` table for flexible preference storage.
+- Added `business_address`, `business_logo_url`, `tax_id`, `website` columns.
+- Updated `handle_new_user` trigger to seed default settings (Theme, Currency, etc.).
+
+**Task 5.2 — Settings Architecture**
+- Refactored `SettingsContext.jsx` to load/save from Supabase `profiles` table instead of `localStorage`.
+- Added `updateProfile` and `updateProfileData` to `client.js` and context.
+
+**Task 5.3 — Settings UI Refactor**
+- Updated `Settings.jsx` to bind General tab inputs to real DB data.
+- Added new Business Profile fields (Address, Website, Tax ID).
+- Implemented saving logic that updates both `settings` JSON and profile columns.
+
+**Task 5.4 — Data Management**
+- Added "Data" tab to `Settings.jsx`.
+- **Export**: Added "Export All Data" button (downloads `soapbuddy_export_YYYY-MM-DD.json` containing all tables).
+- **Import**: Added CSV import for Ingredients and Customers with simple parsing and bulk insertion.
+
+**Build:** ✅ 2554 modules, zero errors (5.24s)
