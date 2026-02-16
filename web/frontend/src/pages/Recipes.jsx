@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import {
     BookOpen,
     Plus,
@@ -10,7 +10,10 @@ import {
     Factory,
     Scale,
     Info,
-    Tag
+    Tag,
+    TrendingUp,
+    ChevronUp,
+    ChevronDown
 } from 'lucide-react';
 import QualityChart from '../components/QualityChart';
 import {
@@ -21,7 +24,8 @@ import {
     updateRecipe,
     deleteRecipe,
     createBatch,
-    getMolds
+    getMolds,
+    getSalesOrders
 } from '../api/client';
 import { computeQualities } from '../utils/soapMath';
 
@@ -33,11 +37,14 @@ import { useNavigate } from 'react-router-dom';
 import LabelStudio from '../components/LabelStudio';
 
 export default function Recipes() {
-    const { getLimit, tier, meetsMinTier, profile } = useSubscription();
+    const { getLimit, tier, meetsMinTier, profile, hasFeature } = useSubscription();
+    const canSeeAnalytics = hasFeature('salesTracking');
     const navigate = useNavigate();
     const [labelRecipe, setLabelRecipe] = useState(null);
     const [recipes, setRecipes] = useState([]);
     const [ingredients, setIngredients] = useState([]);
+    const [salesOrders, setSalesOrders] = useState([]);
+    const [showProductStats, setShowProductStats] = useState(false);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -64,15 +71,16 @@ export default function Recipes() {
     });
 
     useEffect(() => {
-        loadIngredients();
-        loadMolds();
+        loadData();
     }, []);
 
     useEffect(() => {
-        const timer = setTimeout(() => {
-            loadRecipes();
-        }, 500);
-        return () => clearTimeout(timer);
+        if (!loading) { // Avoid double-fetch on mount
+            const timer = setTimeout(() => {
+                loadRecipes();
+            }, 500);
+            return () => clearTimeout(timer);
+        }
     }, [searchTerm]);
 
     // Real-time quality recalculation when modal ingredients change
@@ -94,15 +102,32 @@ export default function Recipes() {
         return () => clearTimeout(qualityTimer.current);
     }, [formData.ingredients, isModalOpen]);
 
-    async function loadRecipes() {
+    async function loadData() {
         try {
             setLoading(true);
+            const [recipesData, ingredientsData, moldsData, ordersData] = await Promise.all([
+                getRecipes({ search: searchTerm || undefined }),
+                getIngredients(),
+                getMolds(),
+                getSalesOrders()
+            ]);
+            setRecipes(recipesData);
+            setIngredients(ingredientsData);
+            setMolds(moldsData || []);
+            setSalesOrders(ordersData);
+        } catch (err) {
+            console.error('Failed to load data:', err);
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    async function loadRecipes() {
+        try {
             const data = await getRecipes({ search: searchTerm || undefined });
             setRecipes(data);
         } catch (err) {
             console.error('Failed to load recipes:', err);
-        } finally {
-            setLoading(false);
         }
     }
 
@@ -123,6 +148,35 @@ export default function Recipes() {
             console.error('Failed to load molds:', err);
         }
     }
+
+    const productStats = useMemo(() => {
+        const statsMap = {};
+
+        salesOrders.forEach(order => {
+            if (order.status === 'Cancelled') return;
+            (order.items || []).forEach(item => {
+                if (!statsMap[item.recipe_id]) {
+                    statsMap[item.recipe_id] = { units: 0, revenue: 0 };
+                }
+                statsMap[item.recipe_id].units += item.quantity || 0;
+                statsMap[item.recipe_id].revenue += (item.quantity || 0) * (item.unit_price || 0);
+            });
+        });
+
+        const ranked = recipes
+            .map(r => ({
+                id: r.id,
+                name: r.name,
+                units: statsMap[r.id]?.units || 0,
+                revenue: statsMap[r.id]?.revenue || 0,
+                defaultPrice: r.default_price || 0
+            }))
+            .filter(r => r.revenue > 0)
+            .sort((a, b) => b.revenue - a.revenue);
+
+        const topSellerId = ranked[0]?.id || null;
+        return { ranked, topSellerId };
+    }, [recipes, salesOrders]);
 
     async function openModal(recipe = null) {
         if (!recipe) {
@@ -383,7 +437,14 @@ export default function Recipes() {
                     {recipes.map(recipe => (
                         <div key={recipe.id} className="card">
                             <div className="card-header">
-                                <h3 className="card-title">{recipe.name}</h3>
+                                <h3 className="card-title">
+                                    {recipe.name}
+                                    {productStats.topSellerId === recipe.id && (
+                                        <span className="badge badge-green" style={{ fontSize: '0.7rem', marginLeft: '6px' }}>
+                                            Top Seller
+                                        </span>
+                                    )}
+                                </h3>
                                 <span className="badge badge-purple">{recipe.recipe_type}</span>
                             </div>
                             <p style={{ color: 'var(--text-secondary)', marginBottom: 'var(--spacing-md)', fontSize: '0.875rem' }}>
@@ -463,6 +524,48 @@ export default function Recipes() {
                             </div>
                         </div>
                     ))}
+                </div>
+            )}
+
+            {canSeeAnalytics && productStats.ranked.length > 0 && (
+                <div className="card" style={{ marginTop: 'var(--spacing-lg)', overflow: 'hidden' }}>
+                    <div
+                        style={{ padding: 'var(--spacing-md)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}
+                        onClick={() => setShowProductStats(prev => !prev)}
+                    >
+                        <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <TrendingUp size={20} />
+                            Product Performance
+                        </h3>
+                        {showProductStats ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                    </div>
+                    {showProductStats && (
+                        <div style={{ padding: '0 var(--spacing-md) var(--spacing-md)' }}>
+                            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem' }}>
+                                <thead>
+                                    <tr style={{ color: 'var(--text-muted)', textAlign: 'left', borderBottom: '1px solid var(--glass-border)' }}>
+                                        <th style={{ padding: '8px 0' }}>Product</th>
+                                        <th style={{ padding: '8px 0' }}>Units Sold</th>
+                                        <th style={{ padding: '8px 0', textAlign: 'right' }}>Revenue</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {productStats.ranked.map((product, idx) => (
+                                        <tr key={product.id} style={{ borderBottom: '1px solid var(--glass-border)' }}>
+                                            <td style={{ padding: '10px 0', fontWeight: idx === 0 ? 700 : 400 }}>
+                                                {product.name}
+                                                {idx === 0 && <span className="badge badge-green" style={{ marginLeft: '8px', fontSize: '0.72rem' }}>Top Seller</span>}
+                                            </td>
+                                            <td style={{ padding: '10px 0' }}>{product.units}</td>
+                                            <td style={{ padding: '10px 0', textAlign: 'right', fontWeight: 600, color: 'var(--color-success)' }}>
+                                                ${product.revenue.toFixed(2)}
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
                 </div>
             )}
 
