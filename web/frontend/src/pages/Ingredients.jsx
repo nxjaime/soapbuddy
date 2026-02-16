@@ -49,9 +49,11 @@ export default function Ingredients() {
         sap_koh: '',
         unit: 'g',
         quantity_on_hand: 0,
+        reorder_threshold: 0,
         cost_per_unit: 0,
         supplier: '',
-        notes: ''
+        notes: '',
+        expiry_date: ''
     });
 
     useEffect(() => {
@@ -85,9 +87,11 @@ export default function Ingredients() {
                 sap_koh: ingredient.sap_koh || '',
                 unit: ingredient.unit,
                 quantity_on_hand: ingredient.quantity_on_hand,
+                reorder_threshold: ingredient.reorder_threshold ?? 0,
                 cost_per_unit: ingredient.cost_per_unit,
                 supplier: ingredient.supplier || '',
-                notes: ingredient.notes || ''
+                notes: ingredient.notes || '',
+                expiry_date: ingredient.expiry_date || ''
             });
         } else {
             setEditingIngredient(null);
@@ -100,9 +104,11 @@ export default function Ingredients() {
                 sap_koh: '',
                 unit: 'g',
                 quantity_on_hand: 0,
+                reorder_threshold: 0,
                 cost_per_unit: 0,
                 supplier: '',
-                notes: ''
+                notes: '',
+                expiry_date: ''
             });
         }
         setIsModalOpen(true);
@@ -121,7 +127,9 @@ export default function Ingredients() {
                 sap_naoh: formData.sap_naoh ? parseFloat(formData.sap_naoh) : null,
                 sap_koh: formData.sap_koh ? parseFloat(formData.sap_koh) : null,
                 quantity_on_hand: parseFloat(formData.quantity_on_hand),
-                cost_per_unit: parseFloat(formData.cost_per_unit)
+                reorder_threshold: parseFloat(formData.reorder_threshold) || 0,
+                cost_per_unit: parseFloat(formData.cost_per_unit),
+                expiry_date: formData.expiry_date || null
             };
 
             if (editingIngredient) {
@@ -182,6 +190,17 @@ export default function Ingredients() {
             notes: ''
         });
         setIsModalOpen(true);
+    };
+
+    const getExpiryStatus = (expiryDate) => {
+        if (!expiryDate) return null;
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const expiry = new Date(expiryDate);
+        const diffDays = Math.ceil((expiry - today) / (1000 * 60 * 60 * 24));
+        if (diffDays <= 0) return 'expired';
+        if (diffDays <= 30) return 'expiring';
+        return null;
     };
 
     const getCategoryBadge = (category) => {
@@ -302,9 +321,29 @@ export default function Ingredients() {
                                     </td>
                                     <td className="hide-on-mobile">{ing.sap_naoh || '-'}</td>
                                     <td>
-                                        <span style={{ color: ing.quantity_on_hand < 100 ? 'var(--color-error)' : 'inherit', fontWeight: 600 }}>
-                                            {ing.quantity_on_hand} {ing.unit}
-                                        </span>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                            <span style={{
+                                                color: ing.reorder_threshold > 0 && ing.quantity_on_hand <= ing.reorder_threshold
+                                                    ? 'var(--color-error)'
+                                                    : 'inherit',
+                                                fontWeight: 600
+                                            }}>
+                                                {ing.quantity_on_hand} {ing.unit}
+                                                {ing.reorder_threshold > 0 && ing.quantity_on_hand <= ing.reorder_threshold && (
+                                                    <span className="badge badge-error" style={{ marginLeft: '6px', fontSize: '0.65rem' }}>Low</span>
+                                                )}
+                                            </span>
+                                            {(() => {
+                                                const status = getExpiryStatus(ing.expiry_date);
+                                                if (status === 'expired') return (
+                                                    <span className="badge badge-error" style={{ fontSize: '0.65rem', width: 'fit-content' }}>Expired</span>
+                                                );
+                                                if (status === 'expiring') return (
+                                                    <span className="badge badge-warning" style={{ fontSize: '0.65rem', width: 'fit-content' }}>Expiring Soon</span>
+                                                );
+                                                return null;
+                                            })()}
+                                        </div>
                                     </td>
                                     <td className="hide-on-mobile">${ing.cost_per_unit.toFixed(2)}/{ing.unit}</td>
                                     <td className="hide-on-mobile">{ing.supplier || '-'}</td>
@@ -473,12 +512,38 @@ export default function Ingredients() {
                                         />
                                     </div>
                                     <div className="form-group">
+                                        <label className="form-label">Reorder Threshold</label>
+                                        <input
+                                            type="number"
+                                            name="reorder_threshold"
+                                            className="form-input"
+                                            value={formData.reorder_threshold}
+                                            onChange={handleInputChange}
+                                            step="1"
+                                            min="0"
+                                            placeholder="0 = no alert"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="form-row">
+                                    <div className="form-group">
                                         <label className="form-label">Supplier</label>
                                         <input
                                             type="text"
                                             name="supplier"
                                             className="form-input"
                                             value={formData.supplier}
+                                            onChange={handleInputChange}
+                                        />
+                                    </div>
+                                    <div className="form-group">
+                                        <label className="form-label">Expiry Date</label>
+                                        <input
+                                            type="date"
+                                            name="expiry_date"
+                                            className="form-input"
+                                            value={formData.expiry_date}
                                             onChange={handleInputChange}
                                         />
                                     </div>

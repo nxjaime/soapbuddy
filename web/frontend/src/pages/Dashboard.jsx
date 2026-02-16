@@ -28,6 +28,7 @@ import {
 import { useSettings } from '../contexts/SettingsContext';
 import { useAuth } from '../contexts/AuthContext';
 import WelcomeWizard from '../components/WelcomeWizard';
+import LowStockBanner from '../components/LowStockBanner';
 
 const WIZARD_STORAGE_KEY = 'soapbuddy_wizard_complete';
 
@@ -122,6 +123,8 @@ export default function Dashboard() {
                     onDone={() => setShowWizard(false)}
                 />
             )}
+
+            <LowStockBanner />
 
             <div className="page-header">
                 <h1 className="page-title">

@@ -23,6 +23,7 @@ import Traceability from './pages/Traceability'
 import Settings from './pages/Settings'
 import Admin from './pages/Admin'
 import PrintRecipe from './pages/PrintRecipe'
+import ShoppingList from './pages/ShoppingList'
 
 import { SettingsProvider } from './contexts/SettingsContext'
 
@@ -72,6 +73,7 @@ function App() {
               } />
               <Route path="settings" element={<Settings />} />
               <Route path="admin" element={<Admin />} />
+              <Route path="shopping-list" element={<ShoppingList />} />
               <Route path="calculator/print" element={<PrintRecipe />} />
             </Route>
           </Routes>
