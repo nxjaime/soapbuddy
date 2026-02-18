@@ -1,4 +1,6 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
+import { supabase } from '../lib/supabase';
+import { updateProfile as apiUpdateProfile } from '../api/client';
 
 const SettingsContext = createContext();
 
@@ -7,43 +9,129 @@ export function useSettings() {
 }
 
 export function SettingsProvider({ children }) {
+    const [profile, setProfile] = useState(null);
     const [settings, setSettings] = useState({
         businessName: 'My Soap Business',
         contactEmail: '',
         currency: 'USD',
         currencySymbol: '$',
         weightUnit: 'g',
-        theme: 'dark',
-        lowStockThreshold: 10,
-        enableNotifications: true,
+        theme: 'light',
+        lowStockThreshold: 1000,
+        enableNotifications: false,
         emailAlerts: false,
         hiddenTabs: []
     });
 
     useEffect(() => {
-        const savedSettings = localStorage.getItem('soapManager_settings');
-        if (savedSettings) {
-            try {
-                const parsed = JSON.parse(savedSettings);
-                // Ensure currency symbol is set
-                const currencySymbol = getCurrencySymbol(parsed.currency || 'USD');
-                setSettings({ ...parsed, currencySymbol, hiddenTabs: parsed.hiddenTabs || [] });
-            } catch (e) {
-                console.error('Failed to parse settings', e);
+        let mounted = true;
+
+        async function loadProfile() {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                const { data } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .eq('id', user.id)
+                    .single();
+                
+                if (mounted && data) {
+                    setProfile(data);
+                    
+                    // Merge DB settings with defaults
+                    const dbSettings = data.settings || {};
+                    
+                    // Map generic settings JSON to our specific state structure if needed
+                    // or just adopt the structure we planned:
+                    // { theme, currency, weightUnit, notifications: {}, inventory: {}, sidebar: {} }
+                    
+                    // Compatibility: We need to map the flat state structure used by the app 
+                    // to the nested JSON structure, or refactor the app to use nested.
+                    // For now, let's flatten the DB settings into our state to minimize app breakage,
+                    // but we should eventually align them.
+                    
+                    const flatSettings = {
+                        businessName: data.business_name || 'My Soap Business',
+                        contactEmail: user.email || '',
+                        currency: dbSettings.currency || 'USD',
+                        weightUnit: dbSettings.weightUnit || 'g',
+                        theme: dbSettings.theme || 'light',
+                        lowStockThreshold: dbSettings.inventory?.lowStockThreshold || 1000,
+                        enableNotifications: dbSettings.notifications?.enabled || false,
+                        emailAlerts: dbSettings.notifications?.email || false,
+                        hiddenTabs: dbSettings.sidebar?.hidden || []
+                    };
+
+                    const currencySymbol = getCurrencySymbol(flatSettings.currency);
+                    setSettings({ ...flatSettings, currencySymbol });
+                    
+                    // Apply theme
+                    document.documentElement.setAttribute('data-theme', flatSettings.theme);
+                }
             }
         }
+        
+        loadProfile();
+
+        return () => { mounted = false; };
     }, []);
 
-    useEffect(() => {
-        // Apply theme to document
-        document.documentElement.setAttribute('data-theme', settings.theme);
-    }, [settings.theme]);
-
-    const updateSettings = (newSettings) => {
-        const currencySymbol = getCurrencySymbol(newSettings.currency || settings.currency);
-        const updated = { ...settings, ...newSettings, currencySymbol };
+    const updateSettings = async (newFlatSettings) => {
+        // Optimistic update
+        const currencySymbol = getCurrencySymbol(newFlatSettings.currency || settings.currency);
+        const updated = { ...settings, ...newFlatSettings, currencySymbol };
         setSettings(updated);
-        localStorage.setItem('soapManager_settings', JSON.stringify(updated));
+        document.documentElement.setAttribute('data-theme', updated.theme);
+
+        // Construct JSON for DB
+        const dbSettings = {
+            theme: updated.theme,
+            currency: updated.currency,
+            weightUnit: updated.weightUnit,
+            notifications: {
+                enabled: updated.enableNotifications,
+                email: updated.emailAlerts,
+                lowStock: true // default
+            },
+            inventory: {
+                lowStockThreshold: updated.lowStockThreshold
+            },
+            sidebar: {
+                hidden: updated.hiddenTabs
+            }
+        };
+
+        try {
+            // We update settings JSON + business_name in one go if needed
+            const updates = { settings: dbSettings };
+            if (newFlatSettings.businessName) {
+                updates.business_name = newFlatSettings.businessName;
+            }
+            
+            await apiUpdateProfile(updates);
+            
+            // Also update local profile state
+            setProfile(prev => ({ 
+                ...prev, 
+                settings: dbSettings, 
+                business_name: updates.business_name || prev?.business_name 
+            }));
+            
+        } catch (err) {
+            console.error('Failed to persist settings:', err);
+            // Revert? (Not strictly necessary for non-critical settings, but good practice)
+        }
+    };
+
+    const updateProfileData = async (data) => {
+        try {
+            await apiUpdateProfile(data);
+            setProfile(prev => ({ ...prev, ...data }));
+            return true;
+        } catch (err) {
+            console.error('Failed to update profile data:', err);
+            throw err;
+        }
     };
 
     const toggleTab = (tabPath) => {
@@ -79,6 +167,8 @@ export function SettingsProvider({ children }) {
 
     return (
         <SettingsContext.Provider value={{
+            profile,
+            updateProfileData,
             settings,
             updateSettings,
             toggleTab,

@@ -28,24 +28,46 @@ import {
     ArrowUpCircle,
     Zap,
     Settings as SettingsIcon,
-    Box
+    Box,
+    Download,
+    Upload,
+    Trash2
 } from 'lucide-react';
 import { useSettings } from '../contexts/SettingsContext';
 import { useSubscription } from '../contexts/SubscriptionContext';
+import { getAllData, bulkInsertIngredients, bulkInsertCustomers } from '../api/client';
 
 export default function Settings() {
-    const { settings: globalSettings, updateSettings, toggleTab, isTabVisible } = useSettings();
+    const { settings: globalSettings, updateSettings, updateProfileData, toggleTab, isTabVisible, profile } = useSettings();
     const { tier, allPlans, subscribe, manageSubscription } = useSubscription();
     const [searchParams, setSearchParams] = useSearchParams();
     const activeTab = searchParams.get('tab') || 'general';
 
     const [localSettings, setLocalSettings] = useState(globalSettings);
+    // Local state for business profile fields not in settings
+    const [businessProfile, setBusinessProfile] = useState({
+        businessName: '',
+        contactEmail: '',
+        address: '',
+        website: '',
+        taxId: ''
+    });
+
     const [saving, setSaving] = useState(false);
     const [saved, setSaved] = useState(false);
 
     useEffect(() => {
         setLocalSettings(globalSettings);
-    }, [globalSettings]);
+        if (profile) {
+            setBusinessProfile({
+                businessName: profile.business_name || '',
+                contactEmail: globalSettings.contactEmail || '', 
+                address: profile.business_address || '',
+                website: profile.website || '',
+                taxId: profile.tax_id || ''
+            });
+        }
+    }, [globalSettings, profile]);
 
     const handleSettingChange = (e) => {
         const { name, value, type, checked } = e.target;
@@ -55,15 +77,91 @@ export default function Settings() {
         }));
     };
 
+    const handleProfileChange = (e) => {
+        const { name, value } = e.target;
+        setBusinessProfile(prev => ({
+            ...prev,
+            [name]: value
+        }));
+    };
+
     const handleSave = async (e) => {
         e.preventDefault();
         setSaving(true);
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 800));
-        updateSettings(localSettings);
-        setSaving(false);
-        setSaved(true);
-        setTimeout(() => setSaved(false), 3000);
+        try {
+            // Update preferences
+            await updateSettings(localSettings);
+
+            // Update business profile
+            await updateProfileData({
+                business_name: businessProfile.businessName,
+                business_address: businessProfile.address,
+                website: businessProfile.website,
+                tax_id: businessProfile.taxId
+            });
+            
+            setSaved(true);
+            setTimeout(() => setSaved(false), 3000);
+        } catch (err) {
+            console.error('Failed to save settings:', err);
+            alert('Failed to save settings');
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const handleExport = async () => {
+        try {
+            const data = await getAllData();
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `soapbuddy_export_${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+        } catch (err) {
+            console.error('Export failed:', err);
+            alert('Failed to export data');
+        }
+    };
+
+    const handleImport = async (e, type) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = async (event) => {
+            const text = event.target.result;
+            const lines = text.split('\n').filter(line => line.trim());
+            if (lines.length < 2) return; // Header + 1 row
+
+            // Simple CSV parser
+            const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+            const items = lines.slice(1).map(line => {
+                const values = line.split(',');
+                const obj = {};
+                headers.forEach((h, i) => {
+                    obj[h] = values[i]?.trim();
+                });
+                return obj;
+            });
+
+            try {
+                if (type === 'ingredients') {
+                    const result = await bulkInsertIngredients(items);
+                    alert(`Successfully imported ${result.length} ingredients.`);
+                } else if (type === 'customers') {
+                    const result = await bulkInsertCustomers(items);
+                    alert(`Successfully imported ${result.length} customers.`);
+                }
+            } catch (err) {
+                console.error('Import failed:', err);
+                alert('Import failed: ' + err.message);
+            }
+            e.target.value = ''; // Reset input
+        };
+        reader.readAsText(file);
     };
 
     const toggleableTabs = [
@@ -113,6 +211,15 @@ export default function Settings() {
                     <CreditCard size={18} />
                     Subscription
                 </button>
+                <button
+                    type="button"
+                    className={`btn ${activeTab === 'data' ? 'btn-primary' : 'btn-secondary'}`}
+                    onClick={() => setSearchParams({ tab: 'data' })}
+                    style={{ borderBottomLeftRadius: 0, borderBottomRightRadius: 0, borderBottom: activeTab === 'data' ? 'none' : '1px solid var(--glass-border)' }}
+                >
+                    <Database size={18} />
+                    Data
+                </button>
             </div>
 
             {activeTab === 'general' ? (
@@ -132,8 +239,8 @@ export default function Settings() {
                                     type="text"
                                     name="businessName"
                                     className="form-input"
-                                    value={localSettings.businessName || ''}
-                                    onChange={handleSettingChange}
+                                    value={businessProfile.businessName}
+                                    onChange={handleProfileChange}
                                     placeholder="Your Soap Company"
                                 />
                             </div>
@@ -144,10 +251,49 @@ export default function Settings() {
                                     type="email"
                                     name="contactEmail"
                                     className="form-input"
-                                    value={localSettings.contactEmail || ''}
-                                    onChange={handleSettingChange}
+                                    value={businessProfile.contactEmail}
+                                    onChange={handleProfileChange}
                                     placeholder="you@example.com"
+                                    disabled
+                                    title="Contact support to change email"
                                 />
+                            </div>
+
+                            <div className="form-group">
+                                <label className="form-label">Address</label>
+                                <textarea
+                                    name="address"
+                                    className="form-input"
+                                    rows="3"
+                                    value={businessProfile.address}
+                                    onChange={handleProfileChange}
+                                    placeholder="123 Soap St, Clean City, ST 12345"
+                                />
+                            </div>
+
+                            <div className="form-row">
+                                <div className="form-group">
+                                    <label className="form-label">Website</label>
+                                    <input
+                                        type="url"
+                                        name="website"
+                                        className="form-input"
+                                        value={businessProfile.website}
+                                        onChange={handleProfileChange}
+                                        placeholder="https://example.com"
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label className="form-label">Tax ID / VAT</label>
+                                    <input
+                                        type="text"
+                                        name="taxId"
+                                        className="form-input"
+                                        value={businessProfile.taxId}
+                                        onChange={handleProfileChange}
+                                        placeholder="Optional"
+                                    />
+                                </div>
                             </div>
                         </div>
 
@@ -335,6 +481,74 @@ export default function Settings() {
                         </button>
                     </div>
                 </form>
+            ) : activeTab === 'data' ? (
+                <div className="data-management-tab">
+                    <div className="card">
+                        <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: 'var(--spacing-lg)' }}>
+                            <Download size={20} />
+                            Export Data
+                        </h3>
+                        <p style={{ color: 'var(--text-secondary)', marginBottom: 'var(--spacing-lg)' }}>
+                            Download a complete backup of your ingredients, recipes, customers, sales, and production history.
+                            The file will be in JSON format.
+                        </p>
+                        <button className="btn btn-primary" onClick={handleExport}>
+                            <Download size={18} />
+                            Export All Data
+                        </button>
+                    </div>
+
+                    <div className="card" style={{ marginTop: 'var(--spacing-lg)' }}>
+                        <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: 'var(--spacing-lg)' }}>
+                            <Upload size={20} />
+                            Import Data
+                        </h3>
+                        <p style={{ color: 'var(--text-secondary)', marginBottom: 'var(--spacing-lg)' }}>
+                            Bulk import data using CSV files. Duplicate names/emails will be skipped.
+                        </p>
+
+                        <div style={{ display: 'grid', gap: 'var(--spacing-md)' }}>
+                            <div style={{ padding: 'var(--spacing-md)', background: 'var(--glass-bg)', borderRadius: 'var(--radius-sm)' }}>
+                                <h4 style={{ marginBottom: '8px' }}>Import Ingredients</h4>
+                                <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '12px' }}>
+                                    CSV Format: <code>name, cost, stock, unit</code>
+                                </p>
+                                <input
+                                    type="file"
+                                    accept=".csv"
+                                    onChange={(e) => handleImport(e, 'ingredients')}
+                                    className="form-input"
+                                />
+                            </div>
+
+                            <div style={{ padding: 'var(--spacing-md)', background: 'var(--glass-bg)', borderRadius: 'var(--radius-sm)' }}>
+                                <h4 style={{ marginBottom: '8px' }}>Import Customers</h4>
+                                <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '12px' }}>
+                                    CSV Format: <code>name, email, phone, type</code>
+                                </p>
+                                <input
+                                    type="file"
+                                    accept=".csv"
+                                    onChange={(e) => handleImport(e, 'customers')}
+                                    className="form-input"
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="card" style={{ marginTop: 'var(--spacing-lg)', borderLeft: '4px solid var(--color-error)' }}>
+                        <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: 'var(--spacing-lg)', color: 'var(--color-error)' }}>
+                            <Trash2 size={20} />
+                            Danger Zone
+                        </h3>
+                        <p style={{ color: 'var(--text-secondary)', marginBottom: 'var(--spacing-lg)' }}>
+                            Once you delete your account, there is no going back. Please be certain.
+                        </p>
+                        <button className="btn btn-secondary" style={{ color: 'var(--color-error)', borderColor: 'var(--color-error)' }} onClick={() => alert('Account deletion is not yet implemented.')}>
+                            Delete Account
+                        </button>
+                    </div>
+                </div>
             ) : (
                 <div className="subscription-tab">
                     <div className="card" style={{ marginBottom: 'var(--spacing-xl)', borderLeft: '4px solid var(--color-primary)' }}>

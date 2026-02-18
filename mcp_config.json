@@ -1,8 +1,15 @@
 {
     "mcpServers": {
-        "notebooklm": {
-            "command": "notebooklm-mcp",
-            "description": "Integrated Knowledge Management and Research Synthesis"
+        "notebooklm-mcp": {
+            "type": "stdio",
+            "command": "/home/nickj/.local/bin/notebooklm-mcp",
+            "args": [],
+            "env": {},
+            "description": "Integrated Knowledge Management and Research Synthesis",
+            "notebook_name": "Soapbuddy Soap Maker App Development",
+            "notebook_id": "939e9f4e-387c-4429-86a9-25f47dd8f591",
+            "notebook_url": "https://notebooklm.google.com/notebook/939e9f4e-387c-4429-86a9-25f47dd8f591",
+            "notes": "Auth tokens managed by notebooklm-mcp-auth. Configuration synced with ~/.claude.json"
         },
         "supabase": {
             "command": "npx",

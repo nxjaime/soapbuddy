@@ -1292,6 +1292,19 @@ export const updateProfileTier = async (userId, tier) => {
     return data;
 };
 
+export const updateProfile = async (updates) => {
+    ensureClient();
+    const user_id = await getUserId();
+    const { data, error } = await supabase
+        .from('profiles')
+        .update(updates)
+        .eq('id', user_id)
+        .select()
+        .single();
+    if (error) handleError(error, 'update profile');
+    return data;
+};
+
 // ============ Molds ============
 
 export const getMolds = async () => {
@@ -1337,4 +1350,81 @@ export const deleteMold = async (id) => {
         .delete()
         .eq('id', id);
     if (error) handleError(error, 'delete mold');
+};
+
+// ============ Data Management ============
+
+export const getAllData = async () => {
+    ensureClient();
+    const [
+        ingredients,
+        recipes,
+        customers,
+        sales,
+        supplies,
+        expenses,
+        batches,
+        molds
+    ] = await Promise.all([
+        getIngredients(),
+        getRecipes(),
+        getCustomers(),
+        getSalesOrders(),
+        getSupplyOrders(),
+        getExpenses(),
+        getBatches(),
+        getMolds()
+    ]);
+    return {
+        ingredients,
+        recipes,
+        customers,
+        sales,
+        supplies,
+        expenses,
+        batches,
+        molds,
+        exportedAt: new Date().toISOString()
+    };
+};
+
+export const bulkInsertIngredients = async (items) => {
+    ensureClient();
+    const user_id = await getUserId();
+    const rows = items.map(item => ({
+        user_id,
+        name: item.name,
+        category: item.category || 'Additive',
+        cost_per_unit: parseFloat(item.cost || 0),
+        quantity_on_hand: parseFloat(item.stock || 0),
+        unit: item.unit || 'g'
+    }));
+    
+    const { data, error } = await supabase
+        .from('ingredients')
+        .insert(rows)
+        .select();
+        
+    if (error) handleError(error, 'bulk insert ingredients');
+    return data;
+};
+
+export const bulkInsertCustomers = async (items) => {
+    ensureClient();
+    const user_id = await getUserId();
+    const rows = items.map(item => ({
+        user_id,
+        name: item.name,
+        email: item.email,
+        phone: item.phone,
+        customer_type: item.type || 'Retail'
+    }));
+
+    const { data, error } = await supabase
+        .from('customers')
+        .insert(rows)
+        .select();
+
+    if (error) handleError(error, 'bulk insert customers');
+    return data;
 };
