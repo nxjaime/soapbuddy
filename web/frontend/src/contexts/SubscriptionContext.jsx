@@ -71,6 +71,26 @@ export const PLANS = {
 
 const TIER_LEVELS = { free: 0, maker: 1, manufacturer: 2 };
 
+const getCachedTier = () => {
+    const cached = localStorage.getItem('soapbuddy_tier_cache');
+    if (!cached) return 'free';
+
+    const { tier, timestamp } = JSON.parse(cached);
+    const thirtyMinutesMs = 30 * 60 * 1000;
+    if (Date.now() - timestamp > thirtyMinutesMs) {
+        localStorage.removeItem('soapbuddy_tier_cache');
+        return 'free';
+    }
+    return tier;
+};
+
+const setCachedTier = (tier) => {
+    localStorage.setItem('soapbuddy_tier_cache', JSON.stringify({
+        tier,
+        timestamp: Date.now()
+    }));
+};
+
 export function SubscriptionProvider({ children }) {
     const { user } = useAuth();
     const [tier, setTier] = useState('free');
@@ -79,12 +99,14 @@ export function SubscriptionProvider({ children }) {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        if (!user) {
+        if (!user || !user.id) {
             setTier('free');
             setProfile(null);
             setLoading(false);
             return;
         }
+
+        let mounted = true;
 
         const fetchProfile = async () => {
             setLoading(true);
@@ -94,20 +116,21 @@ export function SubscriptionProvider({ children }) {
                 .eq('id', user.id)
                 .single();
 
-            if (!error && data) {
+            if (!error && data && mounted) {
                 setProfile(data);
-                setTier(data.plan_tier || 'free');
+                const newTier = data.plan_tier || 'free';
+                setTier(newTier);
                 setIsAdmin(data.is_admin || false);
-            } else {
+                setCachedTier(newTier);
+            } else if (error && mounted) {
                 setTier('free');
                 setIsAdmin(false);
             }
-            setLoading(false);
+            if (mounted) setLoading(false);
         };
 
         fetchProfile();
 
-        // Listen for realtime changes to profile (e.g. upgrade)
         const channel = supabase
             .channel('profile-changes')
             .on('postgres_changes', {
@@ -116,18 +139,21 @@ export function SubscriptionProvider({ children }) {
                 table: 'profiles',
                 filter: `id=eq.${user.id}`,
             }, (payload) => {
-                if (payload.new) {
+                if (payload.new && mounted) {
                     setProfile(payload.new);
-                    setTier(payload.new.plan_tier || 'free');
+                    const newTier = payload.new.plan_tier || 'free';
+                    setTier(newTier);
                     setIsAdmin(payload.new.is_admin || false);
+                    setCachedTier(newTier);
                 }
             })
             .subscribe();
 
         return () => {
+            mounted = false;
             if (channel) supabase.removeChannel(channel);
         };
-    }, [user]);
+    }, [user?.id]);
 
     /**
      * Start subscription checkout flow
