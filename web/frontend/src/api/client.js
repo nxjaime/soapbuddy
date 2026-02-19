@@ -1309,7 +1309,7 @@ export const updateProfile = async (updates) => {
 
 export const getMolds = async () => {
     ensureClient();
-    const user_id = await getCurrentUserId();
+    const user_id = await getUserId();
     const { data, error } = await supabase
         .from('molds')
         .select('*')
@@ -1321,7 +1321,7 @@ export const getMolds = async () => {
 
 export const createMold = async (moldData) => {
     ensureClient();
-    const user_id = await getCurrentUserId();
+    const user_id = await getUserId();
     const { data, error } = await supabase
         .from('molds')
         .insert({ ...moldData, user_id })
@@ -1399,12 +1399,12 @@ export const bulkInsertIngredients = async (items) => {
         quantity_on_hand: parseFloat(item.stock || 0),
         unit: item.unit || 'g'
     }));
-    
+
     const { data, error } = await supabase
         .from('ingredients')
         .insert(rows)
         .select();
-        
+
     if (error) handleError(error, 'bulk insert ingredients');
     return data;
 };

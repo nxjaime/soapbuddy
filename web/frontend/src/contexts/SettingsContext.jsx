@@ -16,7 +16,7 @@ export function SettingsProvider({ children }) {
         currency: 'USD',
         currencySymbol: '$',
         weightUnit: 'g',
-        theme: 'light',
+        theme: 'light', // Always light theme - dark mode removed
         lowStockThreshold: 1000,
         enableNotifications: false,
         emailAlerts: false,
