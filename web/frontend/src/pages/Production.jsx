@@ -27,6 +27,13 @@ export default function Production() {
     const [statusFilter, setStatusFilter] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [showEfficiency, setShowEfficiency] = useState(false);
+    const [isCompleteModalOpen, setIsCompleteModalOpen] = useState(false);
+    const [completingBatch, setCompletingBatch] = useState(null);
+    const [completeFormData, setCompleteFormData] = useState({
+        yield_quantity: 0,
+        notes: ''
+    });
+    const [isSubmittingComplete, setIsSubmittingComplete] = useState(false);
 
     const efficiencyStats = useMemo(() => {
         const completedBatches = batches.filter(b => b.status === 'Complete' && b.yield_quantity > 0);
@@ -156,6 +163,39 @@ export default function Production() {
 
     const [updatingId, setUpdatingId] = useState(null);
 
+    async function handleCompleteSubmit(e) {
+        e.preventDefault();
+        if (!completingBatch) return;
+
+        try {
+            setIsSubmittingComplete(true);
+            const yieldQty = parseInt(completeFormData.yield_quantity) || 0;
+            if (yieldQty <= 0) {
+                alert('Please enter a valid yield quantity (greater than 0)');
+                setIsSubmittingComplete(false);
+                return;
+            }
+
+            await completeBatch(completingBatch.id, yieldQty);
+
+            setIsCompleteModalOpen(false);
+            setCompletingBatch(null);
+            setCompleteFormData({ yield_quantity: 0, notes: '' });
+            await loadBatches();
+        } catch (err) {
+            console.error('Failed to complete batch:', err);
+            alert('Failed to complete batch: ' + err.message);
+        } finally {
+            setIsSubmittingComplete(false);
+        }
+    }
+
+    function closeCompleteModal() {
+        setIsCompleteModalOpen(false);
+        setCompletingBatch(null);
+        setCompleteFormData({ yield_quantity: 0, notes: '' });
+    }
+
     async function handleStatusChange(batchId, newStatus) {
         try {
             setUpdatingId(batchId);
@@ -164,13 +204,13 @@ export default function Production() {
                 // start_batch deducts ingredients and populates usage rows
                 await startBatch(batchId);
             } else if (newStatus === 'Complete') {
-                const yieldQty = prompt("Enter number of units produced (Yield):", "0");
-                if (yieldQty === null) {
-                    setUpdatingId(null);
-                    return; // Cancelled
-                }
-                // complete_batch adds yield to stock, no ingredient deduction
-                await completeBatch(batchId, parseInt(yieldQty) || 0);
+                // Open modal instead of using prompt()
+                const batch = batches.find(b => b.id === batchId);
+                setCompletingBatch(batch);
+                setCompleteFormData({ yield_quantity: batch.yield_quantity || 0, notes: '' });
+                setIsCompleteModalOpen(true);
+                setUpdatingId(null);
+                return;
             } else {
                 // Other transitions (Curing, Cancelled) — plain update
                 await updateBatch(batchId, { status: newStatus });
@@ -501,6 +541,105 @@ export default function Production() {
                                 </button>
                                 <button type="submit" className="btn btn-primary">
                                     Create Batch
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Complete Batch Modal */}
+            {isCompleteModalOpen && completingBatch && (
+                <div className="modal-overlay" onClick={closeCompleteModal}>
+                    <div className="modal" onClick={(e) => e.stopPropagation()}>
+                        <div className="modal-header">
+                            <h2 className="modal-title">Complete Production Batch</h2>
+                            <button className="btn-icon" onClick={closeCompleteModal}>
+                                <X size={20} />
+                            </button>
+                        </div>
+                        <form onSubmit={handleCompleteSubmit}>
+                            <div className="modal-body">
+                                {/* Batch Context */}
+                                <div style={{
+                                    background: 'var(--glass-bg)',
+                                    padding: 'var(--spacing-md)',
+                                    borderRadius: 'var(--radius-sm)',
+                                    marginBottom: 'var(--spacing-lg)',
+                                    display: 'grid',
+                                    gridTemplateColumns: '1fr 1fr',
+                                    gap: 'var(--spacing-md)'
+                                }}>
+                                    <div>
+                                        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Lot Number</div>
+                                        <div style={{ fontFamily: 'monospace', fontWeight: 600, marginTop: '4px' }}>
+                                            {completingBatch.lot_number}
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Recipe</div>
+                                        <div style={{ fontWeight: 500, marginTop: '4px' }}>
+                                            {getRecipeName(completingBatch.recipe_id)}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Yield Input */}
+                                <div className="form-group">
+                                    <label className="form-label">Units Produced (Yield) *</label>
+                                    <input
+                                        type="number"
+                                        className="form-input"
+                                        value={completeFormData.yield_quantity}
+                                        onChange={(e) => setCompleteFormData(prev => ({
+                                            ...prev,
+                                            yield_quantity: e.target.value
+                                        }))}
+                                        min="0"
+                                        step="1"
+                                        required
+                                        placeholder="e.g., 48"
+                                    />
+                                </div>
+
+                                {/* Notes */}
+                                <div className="form-group">
+                                    <label className="form-label">Notes (optional)</label>
+                                    <textarea
+                                        className="form-input"
+                                        value={completeFormData.notes}
+                                        onChange={(e) => setCompleteFormData(prev => ({
+                                            ...prev,
+                                            notes: e.target.value
+                                        }))}
+                                        rows="3"
+                                        placeholder="e.g., Higher yield due to precise measurements"
+                                    />
+                                </div>
+                            </div>
+                            <div className="modal-footer">
+                                <button
+                                    type="button"
+                                    className="btn btn-secondary"
+                                    onClick={closeCompleteModal}
+                                    disabled={isSubmittingComplete}
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    className="btn btn-primary"
+                                    disabled={isSubmittingComplete}
+                                    style={{ opacity: isSubmittingComplete ? 0.6 : 1 }}
+                                >
+                                    {isSubmittingComplete ? (
+                                        <>
+                                            <div className="inline-block w-4 h-4 border-2 border-current border-r-transparent rounded-full animate-spin mr-2" />
+                                            Completing...
+                                        </>
+                                    ) : (
+                                        'Complete Batch'
+                                    )}
                                 </button>
                             </div>
                         </form>
