@@ -324,6 +324,29 @@ export const completeBatch = async (id, yieldQuantity = 0) => {
     return { success: true };
 };
 
+export async function updateRecipeStock(recipeId, quantityDelta) {
+    // Fetch current recipe to get current stock
+    const { data: recipe, error: fetchError } = await supabase
+        .from('recipes')
+        .select('stock_quantity')
+        .eq('id', recipeId)
+        .single();
+
+    if (fetchError) throw new Error('Failed to fetch recipe: ' + fetchError.message);
+
+    const newStock = (recipe.stock_quantity || 0) + quantityDelta;
+
+    const { data, error } = await supabase
+        .from('recipes')
+        .update({ stock_quantity: newStock })
+        .eq('id', recipeId)
+        .select()
+        .single();
+
+    if (error) throw new Error('Failed to update recipe stock: ' + error.message);
+    return data;
+}
+
 // ============ Lye Calculator ============
 
 export const calculateLye = async (request) => {

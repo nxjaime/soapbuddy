@@ -12,7 +12,7 @@ import {
     ChevronUp,
     ChevronDown
 } from 'lucide-react';
-import { getBatches, getRecipes, createBatch, updateBatch, startBatch, completeBatch } from '../api/client';
+import { getBatches, getRecipes, createBatch, updateBatch, startBatch, completeBatch, updateRecipeStock } from '../api/client';
 import { useSubscription } from '../contexts/SubscriptionContext';
 
 const STATUS_OPTIONS = ['Planned', 'In Progress', 'Curing', 'Complete', 'Cancelled'];
@@ -176,7 +176,16 @@ export default function Production() {
                 return;
             }
 
+            // Complete the batch
             await completeBatch(completingBatch.id, yieldQty);
+
+            // Sync recipe stock (frontend fallback)
+            try {
+                await updateRecipeStock(completingBatch.recipe_id, yieldQty);
+            } catch (syncErr) {
+                console.warn('Recipe stock sync failed, but batch was completed.', syncErr);
+                // Don't throw — batch completion was successful, stock will sync on next load
+            }
 
             setIsCompleteModalOpen(false);
             setCompletingBatch(null);
