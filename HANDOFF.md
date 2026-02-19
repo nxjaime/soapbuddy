@@ -1,26 +1,66 @@
-# Sprint 5 Implementation Handoff
+# Sprint 8 Implementation Handoff
 
-**Date:** 2026-02-15
-**Status:** Ready for Sprint 6
-**Model:** Gemini (current)
+**Date:** 2026-02-19
+**Status:** Completed
+**Model:** Claude Sonnet 4.6 (current)
 
 ---
 
 ## What's Complete
 
-✅ **Sprint 4 (Reports & Analytics)** — Commit `f4f7890`
-- Customers Retention Panel
-- Recipes Product Performance & Top Seller Badge
-- Production Efficiency Panel
+✅ **Sprint 8 (Production Accuracy & Lifecycle)**
+- **UX Improvements**:
+    - **Complete Batch Modal**: Replaced `prompt()` with proper React modal for yield quantity input (context, validation, loading state).
+    - **Interactive Lot Numbers**: Lot numbers in Production table are now clickable links to Traceability with auto-search and auto-expand.
+- **Data Integrity**:
+    - **Yield Sync**: Completed batches now sync yield quantity to `recipes.stock_quantity` immediately via frontend fallback function.
+    - **Traceability Ingredients**: Fixed API query to include nested ingredient joins — batches now show full ingredient details in Traceability.
+- **Features**:
+    - **Manual Inventory Adjustments**: Added Adjust button to Inventory table items. Modal allows Add/Remove with amount, reason dropdown (6 presets + custom), validates and updates quantities.
+- **Verification**: All builds passed (zero errors), 5 sequential commits pushed to `main`.
 
-✅ **Sprint 5 (Settings & Data)** — Commit (incoming)
-- **DB Schema**: Added `settings` JSONB and business profile columns to `profiles` table.
-- **Settings UI**: Refactored `Settings.jsx` to load/save real data from Supabase.
-- **Business Profile**: Added Address, Website, and Tax ID fields.
-- **Data Management**: Added "Data" tab with:
-    - **Export**: JSON export of all data.
-    - **Import**: CSV import for Ingredients and Customers.
-- **Build**: 2554 modules, zero errors.
+✅ **Sprint 7 (Stabilization & Labels)**
+- **Bug Fixes**:
+    - **Plan Tier Reset**: Fixed race condition in `SubscriptionContext` by adding mounted verification and correcting dependency array.
+    - **Make Batch UI**: Added loading state and feedback to prevent duplicate submissions.
+    - **Sales Orders**: Improved validation logic and added robust error messaging for out-of-stock items.
+- **Features**:
+    - **Label Creator**: Added `LabelStudio` to Sidebar navigation (gated to Manufacturer tier).
+- **Verification**: All builds passed, commits pushed to `main`.
+
+✅ **Sprint 6 (Production Lifecycle)**
+- **Core Fixes**: Enabled full Create -> Start -> Cure -> Complete flow.
+- **DB/RPC**: Fixed `start_batch` and `complete_batch` logic and schema.
+- **Inventory**: validated automatic drawdown matches recipe.
+
+✅ **Sprint 5 (Settings & Data)**
+- **Data**: JSONB settings, Import/Export, Business Profile.
+
+---
+
+## Known Issues (To Be Addressed - Sprint 9+)
+
+### 1. Recipes 38-44 Missing Ingredients (Data Issue)
+- **Symptoms**: Bulk-created recipes (ID 38-44, e.g., "Hemp & Olive") have 0 ingredients defined.
+- **Impact**: Creating batches for these recipes works but triggers no inventory drawdown.
+- **Status**: Identified; Sprint 9+ backlog.
+
+### 2. Audit Trail for Adjustments (Enhancement)
+- **Symptoms**: Manual inventory adjustments (reason tracked) should be queryable for compliance/traceability.
+- **Impact**: Low priority; reasons are captured but not indexed.
+- **Status**: Future enhancement for audit schema.
+
+---
+
+## 🚀 Sprint 9 Roadmap (Formula Intelligence & UX Polish)
+
+---
+
+1. **[Rebrand]** Calculator ➜ **Formula Designer**: Rename UI components and routes.
+2. **[Library]** **Formulations** Sidebar: Add new navigation and storage for base oil ratios.
+3. **[Feature]** Save/Load Formulas: Persistent storage for named formulations.
+4. **[Recipe]** Formula Templates: Use saved Formulations as the foundation for new Recipes.
+5. **[Utility]** Print Recipes: High-fidelity print/PDF view for production cards.
 
 ---
 
@@ -28,31 +68,10 @@
 
 **Git root:** `/home/nickj/Documents/Soapmaker_App/SoapManager/`
 **Frontend root:** `web/frontend/src/`
-**Current branch:** `main`
-
-**Key files modified in Sprint 5:**
-- `web/frontend/src/pages/Settings.jsx` — Major refactor, added Data tab.
-- `web/frontend/src/contexts/SettingsContext.jsx` — Switched from localStorage to Supabase.
-- `web/frontend/src/api/client.js` — Added `updateProfile`, `getAllData`, `bulkInsert...`.
-- `supabase/sprint5_settings_data.sql` — Migration file.
-
-**Build command:**
-```bash
-cd /home/nickj/Documents/Soapmaker_App/SoapManager/web/frontend && npm run build
-```
-Expected: `✓ built` with zero errors.
-
----
-
-## Next Steps (Sprint 6 Ideas)
-
-- **Invoicing**: Use the new Business Profile data to generate PDF invoices.
-- **Label Printing**: Enhance Label Studio with the new data.
-- **Data Import Expansion**: Add support for Recipes import (complex).
+**Current Head:** `b2ab998` (Sprint 8: Interactive Lot Numbers)
 
 ---
 
 ## Manual Actions Required
 
-1.  **Run Migration**: Execute `supabase/sprint5_settings_data.sql` in your Supabase SQL Editor.
-2.  **Update NotebookLM**: Upload `EXECUTION_JOURNAL.md` and `docs/plans/2026-02-15-sprint5-settings-data-design.md` to the SoapBuddy notebook.
+None.
