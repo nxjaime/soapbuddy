@@ -25,6 +25,7 @@ import Admin from './pages/Admin'
 import PrintRecipe from './pages/PrintRecipe'
 import ShoppingList from './pages/ShoppingList'
 import MoldManager from './pages/MoldManager'
+import LabelStudio from './components/LabelStudio'
 
 import { SettingsProvider } from './contexts/SettingsContext'
 
@@ -71,6 +72,9 @@ function App() {
               } />
               <Route path="traceability" element={
                 <TierGate featureId="traceability"><Traceability /></TierGate>
+              } />
+              <Route path="label-creator" element={
+                <TierGate featureId="labelCreator"><LabelStudio /></TierGate>
               } />
               <Route path="settings" element={<Settings />} />
               <Route path="admin" element={<Admin />} />

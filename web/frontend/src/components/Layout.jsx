@@ -25,7 +25,8 @@ import {
     ShieldCheck,
     Lock,
     ShoppingBag,
-    Box
+    Box,
+    Palette
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -60,6 +61,7 @@ export default function Layout() {
         { path: '/expenses', icon: Receipt, label: 'Expenses', featureId: 'salesTracking' },
         { path: '/financials', icon: BarChart3, label: 'Financials', featureId: 'financialInsights' },
         { path: '/traceability', icon: FileSearch, label: 'Traceability', featureId: 'traceability' },
+        { path: '/label-creator', icon: Palette, label: 'Label Creator', featureId: 'labelCreator' },
         { path: '/settings', icon: SettingsIcon, label: 'Settings', alwaysVisible: true },
         { path: '/admin', icon: ShieldCheck, label: 'Admin', isAdminOnly: true }
     ];
