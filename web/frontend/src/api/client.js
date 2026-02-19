@@ -238,7 +238,13 @@ export const getBatches = async (params = {}) => {
         .from('production_batches')
         .select(`
             *,
-            recipe:recipes(id, name)
+            recipe:recipes(
+                *,
+                ingredients:recipe_ingredients(
+                    *,
+                    ingredient:ingredients(*)
+                )
+            )
         `);
 
     if (params.status) {
