@@ -56,6 +56,24 @@ export default function Traceability() {
         loadData();
     }, []);
 
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        const lotParam = params.get('lot');
+        if (lotParam && filteredBatches.length > 0) {
+            // Find the batch with this lot number
+            const matchingBatch = filteredBatches.find(b => b.lot_number === lotParam);
+            if (matchingBatch) {
+                setSearch(lotParam); // Auto-populate search
+                setExpandedBatch(matchingBatch.id); // Auto-expand batch
+                // Scroll to the batch (optional, nice-to-have)
+                setTimeout(() => {
+                    const element = document.querySelector(`[data-lot="${lotParam}"]`);
+                    if (element) element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }, 100);
+            }
+        }
+    }, [filteredBatches]);
+
     async function loadData() {
         try {
             setLoading(true);
@@ -149,7 +167,7 @@ export default function Traceability() {
                         const isExpanded = expandedBatch === batch.id;
 
                         return (
-                            <div key={batch.id} className="card" style={{ padding: 0, overflow: 'hidden' }}>
+                            <div key={batch.id} className="card" style={{ padding: 0, overflow: 'hidden' }} data-lot={batch.lot_number}>
                                 {/* Header */}
                                 <div
                                     style={{

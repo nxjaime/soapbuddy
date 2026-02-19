@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import {
     Factory,
     Plus,
@@ -352,7 +353,18 @@ export default function Production() {
                                 return (
                                     <tr key={batch.id}>
                                         <td>
-                                            <strong style={{ fontFamily: 'monospace' }}>{batch.lot_number}</strong>
+                                            <Link
+                                                to={`/traceability?lot=${encodeURIComponent(batch.lot_number)}`}
+                                                style={{
+                                                    cursor: 'pointer',
+                                                    color: 'var(--color-primary)',
+                                                    textDecoration: 'none',
+                                                    fontFamily: 'monospace',
+                                                    fontWeight: 'bold'
+                                                }}
+                                            >
+                                                {batch.lot_number}
+                                            </Link>
                                         </td>
                                         <td>{getRecipeName(batch.recipe_id)}</td>
                                         <td>
