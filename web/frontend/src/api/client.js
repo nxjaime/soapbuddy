@@ -1213,6 +1213,34 @@ export const transferInventory = async (itemId, toLocationId, transferQty) => {
     }
 };
 
+export async function adjustInventoryItem(itemId, quantityDelta, reason) {
+    // Fetch current inventory item to calculate new quantity
+    const { data: item, error: fetchError } = await supabase
+        .from('inventory_items')
+        .select('quantity')
+        .eq('id', itemId)
+        .single();
+
+    if (fetchError) throw new Error('Failed to fetch inventory item: ' + fetchError.message);
+
+    const newQuantity = (item.quantity || 0) + quantityDelta;
+    if (newQuantity < 0) throw new Error('Adjustment would result in negative quantity');
+
+    const { data, error } = await supabase
+        .from('inventory_items')
+        .update({ quantity: newQuantity })
+        .eq('id', itemId)
+        .select()
+        .single();
+
+    if (error) throw new Error('Failed to adjust inventory: ' + error.message);
+
+    // TODO: If audit table exists, create log entry here
+    // await supabase.from('inventory_adjustments').insert({...})
+
+    return data;
+}
+
 // ============ Bulk Oil Import ============
 
 /**

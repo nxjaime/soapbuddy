@@ -24,7 +24,8 @@ import {
     deleteInventoryItem,
     getBatches,
     getRecipes,
-    transferInventory
+    transferInventory,
+    adjustInventoryItem
 } from '../api/client';
 import { useSettings } from '../contexts/SettingsContext';
 import { useSubscription } from '../contexts/SubscriptionContext';
@@ -49,6 +50,14 @@ export default function Inventory() {
     const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
     const [editingLocation, setEditingLocation] = useState(null);
     const [transferSaving, setTransferSaving] = useState(false);
+    const [isAdjustModalOpen, setIsAdjustModalOpen] = useState(false);
+    const [adjustingItem, setAdjustingItem] = useState(null);
+    const [adjustForm, setAdjustForm] = useState({
+        adjustment_type: 'add', // 'add' or 'remove'
+        amount: 0,
+        reason: ''
+    });
+    const [isAdjustSubmitting, setIsAdjustSubmitting] = useState(false);
 
     const [locationForm, setLocationForm] = useState({
         name: '',
@@ -235,6 +244,53 @@ export default function Inventory() {
         }
     }
 
+    function openAdjustModal(item) {
+        setAdjustingItem(item);
+        setAdjustForm({ adjustment_type: 'add', amount: 0, reason: '' });
+        setIsAdjustModalOpen(true);
+    }
+
+    function closeAdjustModal() {
+        setIsAdjustModalOpen(false);
+        setAdjustingItem(null);
+        setAdjustForm({ adjustment_type: 'add', amount: 0, reason: '' });
+    }
+
+    async function handleAdjustSubmit(e) {
+        e.preventDefault();
+        if (!adjustingItem) return;
+
+        try {
+            setIsAdjustSubmitting(true);
+
+            const amount = parseInt(adjustForm.amount) || 0;
+            if (amount <= 0) {
+                alert('Please enter a valid amount (greater than 0)');
+                setIsAdjustSubmitting(false);
+                return;
+            }
+
+            const reason = adjustForm.reason.trim();
+            if (!reason) {
+                alert('Please provide a reason for this adjustment');
+                setIsAdjustSubmitting(false);
+                return;
+            }
+
+            const delta = adjustForm.adjustment_type === 'add' ? amount : -amount;
+
+            await adjustInventoryItem(adjustingItem.id, delta, reason);
+
+            closeAdjustModal();
+            await loadData();
+        } catch (err) {
+            console.error('Failed to adjust inventory:', err);
+            alert('Failed to adjust inventory: ' + err.message);
+        } finally {
+            setIsAdjustSubmitting(false);
+        }
+    }
+
     // ---- Filtering ----
     const filteredItems = inventoryItems.filter(item => {
         if (filterLocation && item.location_id !== parseInt(filterLocation)) return false;
@@ -409,6 +465,14 @@ export default function Inventory() {
                                             </td>
                                             <td>
                                                 <div style={{ display: 'flex', gap: '4px' }}>
+                                                    <button
+                                                        className="btn-icon"
+                                                        onClick={() => openAdjustModal(item)}
+                                                        title="Adjust quantity"
+                                                        style={{ color: 'var(--color-warning)' }}
+                                                    >
+                                                        <Edit2 size={16} />
+                                                    </button>
                                                     <button className="btn-icon" onClick={() => openTransferModal(item)} title={canTransfer ? 'Transfer' : 'Upgrade to Maker'} disabled={!canTransfer} style={{ color: canTransfer ? 'var(--color-info)' : 'var(--text-muted)' }}>
                                                         {canTransfer ? <ArrowRightLeft size={16} /> : <Lock size={16} />}
                                                     </button>
@@ -725,6 +789,138 @@ export default function Inventory() {
                                 <button type="submit" className="btn btn-primary" disabled={transferSaving}>
                                     <ArrowRightLeft size={18} />
                                     {transferSaving ? 'Transferring...' : 'Transfer'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* ADJUST INVENTORY MODAL */}
+            {isAdjustModalOpen && adjustingItem && (
+                <div className="modal-overlay" onClick={closeAdjustModal}>
+                    <div className="modal" onClick={(e) => e.stopPropagation()}>
+                        <div className="modal-header">
+                            <h2 className="modal-title">Adjust Inventory</h2>
+                            <button className="btn-icon" onClick={closeAdjustModal}>
+                                <X size={20} />
+                            </button>
+                        </div>
+                        <form onSubmit={handleAdjustSubmit}>
+                            <div className="modal-body">
+                                {/* Item Context */}
+                                <div style={{
+                                    background: 'var(--glass-bg)',
+                                    padding: 'var(--spacing-md)',
+                                    borderRadius: 'var(--radius-sm)',
+                                    marginBottom: 'var(--spacing-lg)',
+                                    display: 'grid',
+                                    gridTemplateColumns: '1fr 1fr',
+                                    gap: 'var(--spacing-md)'
+                                }}>
+                                    <div>
+                                        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Product</div>
+                                        <div style={{ fontWeight: 500, marginTop: '4px' }}>
+                                            {adjustingItem.recipe?.name || 'Unknown'}
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Location</div>
+                                        <div style={{ fontWeight: 500, marginTop: '4px' }}>
+                                            {adjustingItem.location?.name || 'Unknown'}
+                                        </div>
+                                    </div>
+                                    <div style={{ gridColumn: '1 / -1' }}>
+                                        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Current Quantity</div>
+                                        <div style={{ fontWeight: 600, marginTop: '4px', fontSize: '1.1rem' }}>
+                                            {adjustingItem.quantity} units
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Adjustment Type Toggle */}
+                                <div className="form-group">
+                                    <label className="form-label">Adjustment Type</label>
+                                    <div style={{ display: 'flex', gap: 'var(--spacing-sm)' }}>
+                                        <button
+                                            type="button"
+                                            className={`btn ${adjustForm.adjustment_type === 'add' ? 'btn-primary' : 'btn-secondary'}`}
+                                            onClick={() => setAdjustForm(prev => ({ ...prev, adjustment_type: 'add' }))}
+                                            style={{ flex: 1 }}
+                                        >
+                                            + Add
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className={`btn ${adjustForm.adjustment_type === 'remove' ? 'btn-primary' : 'btn-secondary'}`}
+                                            onClick={() => setAdjustForm(prev => ({ ...prev, adjustment_type: 'remove' }))}
+                                            style={{ flex: 1 }}
+                                        >
+                                            − Remove
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* Amount Input */}
+                                <div className="form-group">
+                                    <label className="form-label">Amount *</label>
+                                    <input
+                                        type="number"
+                                        className="form-input"
+                                        value={adjustForm.amount}
+                                        onChange={(e) => setAdjustForm(prev => ({ ...prev, amount: e.target.value }))}
+                                        min="0"
+                                        step="1"
+                                        required
+                                        placeholder="e.g., 5"
+                                    />
+                                </div>
+
+                                {/* Reason Input */}
+                                <div className="form-group">
+                                    <label className="form-label">Reason *</label>
+                                    <select
+                                        className="form-input form-select"
+                                        value={adjustForm.reason}
+                                        onChange={(e) => setAdjustForm(prev => ({ ...prev, reason: e.target.value }))}
+                                        required
+                                    >
+                                        <option value="">Select a reason...</option>
+                                        <option value="Damaged">Damaged goods</option>
+                                        <option value="Wastage">Production wastage</option>
+                                        <option value="Cycle Count">Cycle count correction</option>
+                                        <option value="Spill">Spill or accident</option>
+                                        <option value="Theft">Theft or loss</option>
+                                        <option value="Other">Other</option>
+                                    </select>
+                                    {adjustForm.reason === 'Other' && (
+                                        <input
+                                            type="text"
+                                            className="form-input"
+                                            placeholder="Specify reason..."
+                                            value={adjustForm.reason}
+                                            onChange={(e) => setAdjustForm(prev => ({ ...prev, reason: e.target.value }))}
+                                            style={{ marginTop: 'var(--spacing-sm)' }}
+                                        />
+                                    )}
+                                </div>
+                            </div>
+                            <div className="modal-footer">
+                                <button
+                                    type="button"
+                                    className="btn btn-secondary"
+                                    onClick={closeAdjustModal}
+                                    disabled={isAdjustSubmitting}
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    className="btn btn-primary"
+                                    disabled={isAdjustSubmitting}
+                                    style={{ opacity: isAdjustSubmitting ? 0.6 : 1 }}
+                                >
+                                    {isAdjustSubmitting ? 'Adjusting...' : 'Apply Adjustment'}
                                 </button>
                             </div>
                         </form>
