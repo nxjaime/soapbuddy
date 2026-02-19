@@ -277,3 +277,73 @@
 - **Import**: Added CSV import for Ingredients and Customers with simple parsing and bulk insertion.
 
 **Build:** ✅ 2554 modules, zero errors (5.24s)
+
+---
+
+## 2026-02-18 - Sprint 7: Bug Fixes + Label Maker Sidebar
+
+### Overview
+Sprint 7 was a **stabilization sprint** addressing 4 critical issues from Sprint 6 testing, plus adding Label Maker visibility to the sidebar. Executed sequentially using subagent-driven development with superpowers skills.
+
+### Commits (in order)
+
+**Commit 1: `2770a79`** — "fix: resolve subscription tier reset on navigation"
+- Fixed useEffect dependency from `[user]` to `[user?.id]` to prevent unnecessary re-renders
+- Added mounted flag to prevent stale state updates after component unmount
+- Implemented localStorage cache with 30-minute expiration as fallback during navigation
+- Realtime listener now respects mounted flag to avoid race conditions
+- Result: Tier persists through page navigation without resetting to Free
+
+**Commit 2: `d59a0c8`** — "fix: add loading state and feedback to Make Batch button"
+- Added inline Spinner component for visual feedback
+- Implemented isCreatingBatch state to track async operation
+- Button disabled during creation, shows spinner + "Creating..." text
+- Success notification appears after batch creation, redirects to Production
+- Error handling displays failure message to user
+- Result: Prevents duplicate batches, users get clear feedback on action status
+
+**Commit 3: `034e09e`** — "fix: improve Sales Order form validation and error messages"
+- Added getAvailableStock(), validateItemSelection(), validateQuantity() helper functions
+- Enhanced item selector dropdown to display available stock with visual indicators (✓/✗)
+- Real-time validation on item selection with specific error messages
+- Quantity validation prevents orders exceeding available stock
+- Styled error display component for clarity
+- Result: Clear, specific error messages instead of vague "Please select an Item"
+
+**Commit 4: `deef7fd`** — "feat: add Label Creator to sidebar navigation"
+- Added Palette icon import to Layout.jsx
+- Added Label Creator nav item with featureId: 'labelCreator' (Manufacturer tier only)
+- Added LabelStudio import and /label-creator route with TierGate wrapping in App.jsx
+- Nav item appears only to Manufacturer tier users
+- Result: Label Creator is now visible and accessible in sidebar for authorized users
+
+### Build Verification
+- After each task: Build passed with zero errors
+- Final build: 5.59s, 2554 modules, zero warnings
+
+### Testing Performed
+- Manual testing of each fix during implementation
+- Build verification after each commit
+- All 4 tasks completed and pushed to nxjaime/soapbuddy main branch
+
+### Key Technical Insights
+- **Race conditions fixed** with mounted flag pattern (prevents "Can't update unmounted component" warnings)
+- **localStorage caching** provides resilience during rapid navigation
+- **Inline spinner** component used instead of importing external library (YAGNI principle)
+- **Feature gating** via Supabase RLS allows tier-based UI visibility
+- **Sequential execution** ensured each fix was stable before moving to next
+
+### Impact
+✅ Subscription tier reset resolved — Manufacturer users can navigate without feature lockouts
+✅ Batch creation UX improved — No more duplicate batches due to silent creation
+✅ Sales Order validation enhanced — Users understand why orders fail
+✅ Label Maker visibility — Now discoverable in sidebar for Manufacturer tier
+
+### Metrics
+- 4 bugs fixed
+- 1 feature added
+- 4 commits
+- 0 build errors
+- 100% task completion rate
+
+---
