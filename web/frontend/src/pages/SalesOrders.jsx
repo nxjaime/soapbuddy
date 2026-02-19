@@ -31,6 +31,8 @@ export default function SalesOrders() {
     const [expandedOrder, setExpandedOrder] = useState(null);
     const [editingOrder, setEditingOrder] = useState(null);
     const [saving, setSaving] = useState(false);
+    const [error, setError] = useState(null);
+    const [selectedLocation, setSelectedLocation] = useState('default');
 
     // Filters
     const [search, setSearch] = useState('');
@@ -96,6 +98,7 @@ export default function SalesOrders() {
                 items: []
             });
         }
+        setError(null);
         setIsModalOpen(true);
     }
 
@@ -126,15 +129,72 @@ export default function SalesOrders() {
         }));
     }
 
+    const getAvailableStock = (recipeId) => {
+        const recipe = recipes.find(r => r.id === parseInt(recipeId));
+        if (!recipe) return 0;
+        return recipe.stock_at_location?.[selectedLocation] || recipe.stock_quantity || 0;
+    };
+
+    const validateItemSelection = (itemId) => {
+        if (!itemId) return 'Please select an Item';
+        const available = getAvailableStock(itemId);
+        if (available <= 0) {
+            const item = recipes.find(r => r.id === parseInt(itemId));
+            return `"${item?.name || 'Item'}" is out of stock at ${selectedLocation}`;
+        }
+        return null;
+    };
+
+    const validateQuantity = (itemId, quantity) => {
+        const available = getAvailableStock(itemId);
+        const requested = parseFloat(quantity) || 0;
+
+        if (requested > available) {
+            return `Insufficient stock: ${available} available, ${requested} requested`;
+        }
+        return null;
+    };
+
+    const handleItemSelect = (itemId, index) => {
+        const error = validateItemSelection(itemId);
+        if (error) {
+            setError(error);
+            updateOrderItem(index, 'recipe_id', '');
+        } else {
+            setError(null);
+            const recipe = recipes.find(r => r.id === parseInt(itemId));
+            updateOrderItem(index, 'recipe_id', itemId);
+            if (recipe) {
+                updateOrderItem(index, 'unit_price', recipe.default_price || 0);
+            }
+        }
+    };
+
     async function handleSubmit(e) {
         e.preventDefault();
+
         if (formData.items.length === 0) {
-            alert("Please add at least one item.");
+            setError("Please add at least one item.");
             return;
         }
 
+        // Validate all items
+        for (const item of formData.items) {
+            const itemError = validateItemSelection(item.recipe_id);
+            if (itemError) {
+                setError(itemError);
+                return;
+            }
+
+            const quantityError = validateQuantity(item.recipe_id, item.quantity);
+            if (quantityError) {
+                setError(quantityError);
+                return;
+            }
+        }
+
         if ((formData.status === 'Draft' || formData.status === 'Completed') && !editingOrder && !formData.source_location_id) {
-            alert("Please select a source location for inventory deduction.");
+            setError("Please select a source location for inventory deduction.");
             return;
         }
 
@@ -165,7 +225,7 @@ export default function SalesOrders() {
             loadData();
         } catch (err) {
             console.error('Failed to save order:', err);
-            alert('Failed to save order: ' + err.message);
+            setError('Failed to save order: ' + err.message);
         } finally {
             setSaving(false);
         }
@@ -427,6 +487,12 @@ export default function SalesOrders() {
                         </div>
                         <form onSubmit={handleSubmit}>
                             <div className="modal-body">
+                                {error && (
+                                    <div style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', color: 'rgb(220, 38, 38)', padding: '12px 16px', borderRadius: '6px', marginBottom: 'var(--spacing-md)', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                        <AlertCircle size={18} style={{ flexShrink: 0 }} />
+                                        <span>{error}</span>
+                                    </div>
+                                )}
                                 <div className="form-row">
                                     <div className="form-group" style={{ flex: 2 }}>
                                         <label className="form-label">Customer</label>
@@ -490,7 +556,10 @@ export default function SalesOrders() {
                                         <select
                                             className="form-input form-select"
                                             value={formData.source_location_id}
-                                            onChange={(e) => setFormData({ ...formData, source_location_id: e.target.value })}
+                                            onChange={(e) => {
+                                                setFormData({ ...formData, source_location_id: e.target.value });
+                                                setSelectedLocation(e.target.value || 'default');
+                                            }}
                                             required
                                         >
                                             <option value="">Select Location...</option>
@@ -536,25 +605,19 @@ export default function SalesOrders() {
                                                 className="form-input form-select"
                                                 style={{ flex: 3 }}
                                                 value={item.recipe_id}
-                                                onChange={(e) => {
-                                                    const rId = e.target.value;
-                                                    const recipe = recipes.find(r => r.id === parseInt(rId));
-                                                    setFormData(prev => {
-                                                        const updated = [...prev.items];
-                                                        updated[idx] = {
-                                                            ...updated[idx],
-                                                            recipe_id: rId,
-                                                            unit_price: recipe ? (recipe.default_price || 0) : 0
-                                                        };
-                                                        return { ...prev, items: updated };
-                                                    });
-                                                }}
+                                                onChange={(e) => handleItemSelect(e.target.value, idx)}
                                                 required
                                             >
-                                                <option value="">Select Product (Recipe)</option>
-                                                {recipes.map(r => (
-                                                    <option key={r.id} value={r.id}>{r.name}</option>
-                                                ))}
+                                                <option value="">-- Select an Item --</option>
+                                                {recipes.map(r => {
+                                                    const available = getAvailableStock(r.id);
+                                                    const stockStatus = available > 0 ? '✓' : '✗';
+                                                    return (
+                                                        <option key={r.id} value={r.id}>
+                                                            {r.name} ({available} {stockStatus})
+                                                        </option>
+                                                    );
+                                                })}
                                             </select>
                                             <input
                                                 type="number"
