@@ -36,6 +36,10 @@ import { useSubscription } from '../contexts/SubscriptionContext';
 import { useNavigate } from 'react-router-dom';
 import LabelStudio from '../components/LabelStudio';
 
+const Spinner = ({ size = 'md', className = '' }) => (
+    <div className={`inline-block ${size === 'sm' ? 'w-4 h-4' : 'w-6 h-6'} border-2 border-current border-r-transparent rounded-full animate-spin ${className}`} />
+);
+
 export default function Recipes() {
     const { getLimit, tier, meetsMinTier, profile, hasFeature } = useSubscription();
     const canSeeAnalytics = hasFeature('salesTracking');
@@ -55,6 +59,7 @@ export default function Recipes() {
     const [resizeMode, setResizeMode] = useState('weight'); // 'weight' | 'mold'
     const [resizeTargetWeight, setResizeTargetWeight] = useState('');
     const [resizeSelectedMold, setResizeSelectedMold] = useState('');
+    const [isCreatingBatch, setIsCreatingBatch] = useState(false);
     const [formData, setFormData] = useState({
         name: '',
         description: '',
@@ -282,6 +287,7 @@ export default function Recipes() {
     }
 
     async function handleMakeBatch(recipe) {
+        setIsCreatingBatch(true);
         const lotNumber = generateJulianLot();
         try {
             await createBatch({
@@ -292,9 +298,12 @@ export default function Recipes() {
                 status: 'Planned'
             });
             alert(`Created batch ${lotNumber} for ${recipe.name}`);
+            navigate('/production');
         } catch (err) {
             console.error('Failed to create batch:', err);
             alert('Failed to create batch: ' + err.message);
+        } finally {
+            setIsCreatingBatch(false);
         }
     }
 
@@ -498,9 +507,24 @@ export default function Recipes() {
                                 </div>
                             )}
                             <div style={{ display: 'flex', gap: 'var(--spacing-sm)', marginTop: 'auto' }}>
-                                <button className="btn btn-success" style={{ flex: 1 }} onClick={() => handleMakeBatch(recipe)}>
-                                    <Factory size={16} />
-                                    Make Batch
+                                <button
+                                    className={`btn btn-success ${isCreatingBatch ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                    style={{ flex: 1 }}
+                                    onClick={() => handleMakeBatch(recipe)}
+                                    disabled={isCreatingBatch}
+                                    title={isCreatingBatch ? 'Creating batch...' : 'Create a new batch from this recipe'}
+                                >
+                                    {isCreatingBatch ? (
+                                        <>
+                                            <Spinner size="sm" className="mr-2 inline-block" />
+                                            Creating...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Factory size={16} />
+                                            Make Batch
+                                        </>
+                                    )}
                                 </button>
                                 {meetsMinTier('manufacturer') && (
                                     <button
