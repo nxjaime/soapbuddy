@@ -20,6 +20,112 @@ export default function PrintRecipe() {
         );
     }
 
+    const isRecipeMode = !!recipeData.recipe;
+
+    if (isRecipeMode) {
+        const { recipe } = recipeData;
+        return (
+            <div className="print-view" style={{
+                background: 'white',
+                color: '#333',
+                minHeight: '100vh',
+                padding: '40px',
+                fontFamily: "'Inter', sans-serif"
+            }}>
+                {/* Header controls (hidden on print) */}
+                <div className="no-print" style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    marginBottom: '40px',
+                    borderBottom: '1px solid #eee',
+                    paddingBottom: '20px'
+                }}>
+                    <button className="btn btn-secondary" onClick={() => window.close()}>
+                        <ChevronLeft size={16} /> Back
+                    </button>
+                    <button className="btn btn-primary" onClick={() => window.print()}>
+                        <Printer size={16} /> Print Recipe
+                    </button>
+                </div>
+
+                <div style={{ maxWidth: '900px', margin: '0 auto', border: '1px solid #000', padding: '20px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', borderBottom: '2px solid #000', paddingBottom: '10px' }}>
+                        <h1 style={{ margin: 0, fontSize: '24px' }}>{recipe.name}</h1>
+                        <span style={{ fontSize: '14px' }}>{new Date().toLocaleDateString()}</span>
+                    </div>
+
+                    {recipe.description && (
+                        <p style={{ marginBottom: '20px', color: '#555', fontSize: '14px' }}>{recipe.description}</p>
+                    )}
+
+                    {/* Settings */}
+                    <table style={{ width: '50%', borderCollapse: 'collapse', fontSize: '12px', marginBottom: '20px' }}>
+                        <tbody>
+                            <tr style={{ background: '#f8f8f8' }}>
+                                <td style={{ padding: '4px', border: '1px solid #ddd', fontWeight: 700 }}>Lye Type</td>
+                                <td style={{ padding: '4px', border: '1px solid #ddd', textAlign: 'right' }}>{recipe.lye_type}</td>
+                            </tr>
+                            <tr>
+                                <td style={{ padding: '4px', border: '1px solid #ddd', fontWeight: 700 }}>Superfat</td>
+                                <td style={{ padding: '4px', border: '1px solid #ddd', textAlign: 'right' }}>{recipe.superfat_percentage}%</td>
+                            </tr>
+                            <tr style={{ background: '#f8f8f8' }}>
+                                <td style={{ padding: '4px', border: '1px solid #ddd', fontWeight: 700 }}>Water</td>
+                                <td style={{ padding: '4px', border: '1px solid #ddd', textAlign: 'right' }}>{recipe.water_percentage}%</td>
+                            </tr>
+                            <tr>
+                                <td style={{ padding: '4px', border: '1px solid #ddd', fontWeight: 700 }}>Total Oils</td>
+                                <td style={{ padding: '4px', border: '1px solid #ddd', textAlign: 'right' }}>{recipe.total_oils_weight} {recipe.unit}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    {/* Ingredients */}
+                    <h3 style={{ fontSize: '16px', marginBottom: '10px' }}>Ingredients</h3>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '30px' }}>
+                        <thead>
+                            <tr style={{ background: '#334155', color: 'white' }}>
+                                <th style={{ padding: '8px', textAlign: 'left', border: '1px solid #333' }}>#</th>
+                                <th style={{ padding: '8px', textAlign: 'left', border: '1px solid #333' }}>Ingredient</th>
+                                <th style={{ padding: '8px', textAlign: 'center', border: '1px solid #333' }}>Quantity</th>
+                                <th style={{ padding: '8px', textAlign: 'center', border: '1px solid #333' }}>Unit</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {(recipe.ingredients || []).map((ing, idx) => (
+                                <tr key={idx} style={{ background: idx % 2 === 0 ? '#f8f8f8' : 'white' }}>
+                                    <td style={{ padding: '6px', border: '1px solid #ddd' }}>{idx + 1}</td>
+                                    <td style={{ padding: '6px', border: '1px solid #ddd', fontWeight: 600 }}>{ing.name}</td>
+                                    <td style={{ padding: '6px', border: '1px solid #ddd', textAlign: 'center' }}>{ing.quantity}</td>
+                                    <td style={{ padding: '6px', border: '1px solid #ddd', textAlign: 'center' }}>{ing.unit}</td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+
+                    {recipe.notes && (
+                        <div style={{ background: '#f8fafc', padding: '15px', borderRadius: '4px', border: '1px solid #e2e8f0' }}>
+                            <h3 style={{ fontSize: '14px', marginBottom: '8px', color: '#475569' }}>Notes</h3>
+                            <p style={{ fontSize: '13px', color: '#555', margin: 0 }}>{recipe.notes}</p>
+                        </div>
+                    )}
+
+                    <div style={{ marginTop: '40px', fontSize: '12px', color: '#666', fontStyle: 'italic', textAlign: 'center' }}>
+                        Generated by SoapBuddy — Professional Soap Management Solution
+                    </div>
+                </div>
+
+                <style>{`
+                    @media print {
+                        .no-print { display: none !important; }
+                        body { background: white !important; padding: 0 !important; }
+                        .print-view { padding: 0 !important; }
+                    }
+                `}</style>
+            </div>
+        );
+    }
+
     const { results, recipeOils, settings } = recipeData;
 
     // Helper for weight conversion

@@ -338,6 +338,28 @@ export default function Recipes() {
         }
     }
 
+    function handlePrintRecipe(recipe) {
+        const printData = {
+            recipe: {
+                name: recipe.name,
+                description: recipe.description,
+                lye_type: recipe.lye_type,
+                superfat_percentage: recipe.superfat_percentage,
+                water_percentage: recipe.water_percentage,
+                total_oils_weight: recipe.total_oils_weight,
+                unit: recipe.unit || 'g',
+                notes: recipe.notes,
+                ingredients: (recipe.ingredients || []).map(ri => ({
+                    name: ri.ingredient?.name || ri.name || `Ingredient ${ri.ingredient_id}`,
+                    quantity: ri.quantity,
+                    unit: ri.unit
+                }))
+            }
+        };
+        sessionStorage.setItem('print_recipe_data', JSON.stringify(printData));
+        window.open('/formula-designer/print', '_blank', 'width=1000,height=800');
+    }
+
     function handleInputChange(e) {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
@@ -575,6 +597,13 @@ export default function Recipes() {
                                     onClick={() => handleDelete(recipe.id)}
                                 >
                                     <Trash2 size={16} />
+                                </button>
+                                <button
+                                    className="btn btn-secondary"
+                                    onClick={() => handlePrintRecipe(recipe)}
+                                    title="Print recipe"
+                                >
+                                    <Printer size={16} /> Print
                                 </button>
                             </div>
                         </div>
