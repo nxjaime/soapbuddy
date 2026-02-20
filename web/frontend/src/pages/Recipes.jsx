@@ -13,7 +13,8 @@ import {
     Tag,
     TrendingUp,
     ChevronUp,
-    ChevronDown
+    ChevronDown,
+    Printer
 } from 'lucide-react';
 import QualityChart from '../components/QualityChart';
 import {
@@ -25,7 +26,8 @@ import {
     deleteRecipe,
     createBatch,
     getMolds,
-    getSalesOrders
+    getSalesOrders,
+    getFormulation
 } from '../api/client';
 import { computeQualities } from '../utils/soapMath';
 
@@ -78,6 +80,35 @@ export default function Recipes() {
     useEffect(() => {
         loadData();
     }, []);
+
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        const formulaId = params.get('from_formula');
+        if (formulaId) {
+            loadFormulaAsRecipe(formulaId);
+        }
+    }, []);
+
+    async function loadFormulaAsRecipe(formulaId) {
+        try {
+            const formulation = await getFormulation(formulaId);
+            const mappedIngredients = (formulation.oils || []).map(oil => ({
+                ingredient_id: oil.ingredient_id,
+                name: oil.name,
+                quantity: oil.percentage,
+                unit: '%'
+            }));
+            setFormData(prev => ({
+                ...prev,
+                name: `${formulation.name} Soap`,
+                description: formulation.description || '',
+                ingredients: mappedIngredients
+            }));
+            setIsModalOpen(true);
+        } catch (err) {
+            console.error('Failed to load formula as recipe template:', err);
+        }
+    }
 
     useEffect(() => {
         if (!loading) { // Avoid double-fetch on mount
