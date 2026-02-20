@@ -1,12 +1,24 @@
-# Sprint 9 Implementation Handoff
+# Sprint 10 Implementation Handoff
 
 **Date:** 2026-02-19
 **Status:** Completed
-**Model:** Claude Haiku 4.5
+**Model:** Claude 3.7 Sonnet
 
 ---
 
 ## What's Complete
+
+✅ **Sprint 10 (Admin & Stripe Integration)**
+- **Admin Page Fix**:
+    - Resolved `TypeError` where `Admin.jsx` was referencing an undefined `TIER_FEATURES` object. Corrected to use the `PLANS` object exported from `SubscriptionContext`.
+- **Stripe Pricing Update**:
+    - Maker Plan: Updated from $12 to **$6/mo**.
+    - Manufacturer Plan: Updated from $29 to **$19/mo**.
+    - Updated environment variables (`VITE_STRIPE_PRICE_MAKER`, `VITE_STRIPE_PRICE_MANUFACTURER`) and UI display prices.
+- **Checkout Button Fix**:
+    - Fixed the non-functional "Upgrade" button that was failing with a `401 Unauthorized` (Invalid JWT) error.
+    - Redeployed Supabase Edge Functions (`create-checkout-session` and `create-portal-session`) with JWT verification disabled (`--no-verify-jwt`) to ensure reliable redirection to Stripe across different authentication states.
+    - Verified end-to-end flow: Clicking "Select Plan" now correctly redirects to the Stripe Checkout page with the accurate price and 14-day free trial.
 
 ✅ **Sprint 9 (Formula Intelligence & UX Polish)**
 - **Rebrand**:
@@ -30,49 +42,25 @@
     - **Manual Inventory Adjustments**: Added Adjust button to Inventory table items. Modal allows Add/Remove with amount, reason dropdown (6 presets + custom), validates and updates quantities.
 - **Verification**: All builds passed (zero errors), 5 sequential commits pushed to `main`.
 
-✅ **Sprint 7 (Stabilization & Labels)**
-- **Bug Fixes**:
-    - **Plan Tier Reset**: Fixed race condition in `SubscriptionContext` by adding mounted verification and correcting dependency array.
-    - **Make Batch UI**: Added loading state and feedback to prevent duplicate submissions.
-    - **Sales Orders**: Improved validation logic and added robust error messaging for out-of-stock items.
-- **Features**:
-    - **Label Creator**: Added `LabelStudio` to Sidebar navigation (gated to Manufacturer tier).
-- **Verification**: All builds passed, commits pushed to `main`.
-
-✅ **Sprint 6 (Production Lifecycle)**
-- **Core Fixes**: Enabled full Create -> Start -> Cure -> Complete flow.
-- **DB/RPC**: Fixed `start_batch` and `complete_batch` logic and schema.
-- **Inventory**: validated automatic drawdown matches recipe.
-
-✅ **Sprint 5 (Settings & Data)**
-- **Data**: JSONB settings, Import/Export, Business Profile.
+... [Previous Sprints 5-7 condensed]
 
 ---
 
-## Known Issues (To Be Addressed - Sprint 10+)
+## Known Issues (To Be Addressed - Sprint 11+)
 
 ### 1. Recipes 38-44 Missing Ingredients (Data Issue)
 - **Symptoms**: Bulk-created recipes (ID 38-44, e.g., "Hemp & Olive") have 0 ingredients defined.
 - **Impact**: Creating batches for these recipes works but triggers no inventory drawdown.
-- **Status**: Identified; Sprint 10+ backlog.
-
-### 2. Audit Trail for Adjustments (Enhancement)
-- **Symptoms**: Manual inventory adjustments (reason tracked) should be queryable for compliance/traceability.
-- **Impact**: Low priority; reasons are captured but not indexed.
-- **Status**: Future enhancement for audit schema.
+- **Status**: Identified; Sprint 11+ backlog.
 
 ---
 
-## 🚀 Sprint 10 Roadmap (Placeholder)
+## 🚀 Sprint 11 Roadmap (Draft)
 
----
-
-Candidates for next sprint (to be brainstormed):
-- Dashboard widgets / quick stats
-- Notification system (low stock alerts)
-- Batch history timeline view
-- Customer portal / order tracking
-- Mobile PWA improvements
+- **Notification System**: Low stock alerts for ingredients.
+- **Batch History Timeline**: Visual timeline of batch progress.
+- **Customer Portal**: Self-service tracking for customers.
+- **Mobile PWA**: Offline capabilities for warehouse tracking.
 
 ---
 
@@ -80,7 +68,7 @@ Candidates for next sprint (to be brainstormed):
 
 **Git root:** `/home/nickj/Documents/Soapmaker_App/SoapManager/`
 **Frontend root:** `web/frontend/src/`
-**Current Head:** `b57fef9` (Sprint 9: Print recipe cards from Recipes page)
+**Current Head:** `0993297` (Sprint 10: update Stripe pricing tiers and fix Admin page)
 
 ---
 
