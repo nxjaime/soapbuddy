@@ -1,12 +1,23 @@
-# Sprint 8 Implementation Handoff
+# Sprint 9 Implementation Handoff
 
 **Date:** 2026-02-19
 **Status:** Completed
-**Model:** Claude Sonnet 4.6 (current)
+**Model:** Claude Haiku 4.5
 
 ---
 
 ## What's Complete
+
+✅ **Sprint 9 (Formula Intelligence & UX Polish)**
+- **Rebrand**:
+    - **Formula Designer**: Calculator renamed to Formula Designer. Route changed from `/calculator` → `/formula-designer` with backward-compat `<Navigate>` redirect. Sidebar label and page title updated.
+- **Library**:
+    - **Formulations Library**: New `/formulations` page with table view, search, edit, delete. `Load` button navigates to Formula Designer with oils pre-loaded via sessionStorage. `Recipe` button bridges to Recipes page.
+- **Features**:
+    - **Save/Load Formulas**: Save button in Formula Designer persists current oil ratios (percentages only) as named formulations in Supabase. Load button opens a picker to restore any saved formulation into the designer.
+    - **Formula Templates**: Navigating to `/recipes?from_formula=<id>` auto-opens the recipe create modal with oils and name pre-populated from the chosen formulation.
+    - **Print Recipe**: Print button on expanded recipe cards serializes the recipe to sessionStorage and opens the existing print view. `PrintRecipe.jsx` now handles dual-mode: recipe-mode (from Recipes) and calculator-mode (from Formula Designer).
+- **Verification**: All builds passed (zero errors), 5 sequential feature commits pushed to `main`.
 
 ✅ **Sprint 8 (Production Accuracy & Lifecycle)**
 - **UX Improvements**:
@@ -38,12 +49,12 @@
 
 ---
 
-## Known Issues (To Be Addressed - Sprint 9+)
+## Known Issues (To Be Addressed - Sprint 10+)
 
 ### 1. Recipes 38-44 Missing Ingredients (Data Issue)
 - **Symptoms**: Bulk-created recipes (ID 38-44, e.g., "Hemp & Olive") have 0 ingredients defined.
 - **Impact**: Creating batches for these recipes works but triggers no inventory drawdown.
-- **Status**: Identified; Sprint 9+ backlog.
+- **Status**: Identified; Sprint 10+ backlog.
 
 ### 2. Audit Trail for Adjustments (Enhancement)
 - **Symptoms**: Manual inventory adjustments (reason tracked) should be queryable for compliance/traceability.
@@ -52,15 +63,16 @@
 
 ---
 
-## 🚀 Sprint 9 Roadmap (Formula Intelligence & UX Polish)
+## 🚀 Sprint 10 Roadmap (Placeholder)
 
 ---
 
-1. **[Rebrand]** Calculator ➜ **Formula Designer**: Rename UI components and routes.
-2. **[Library]** **Formulations** Sidebar: Add new navigation and storage for base oil ratios.
-3. **[Feature]** Save/Load Formulas: Persistent storage for named formulations.
-4. **[Recipe]** Formula Templates: Use saved Formulations as the foundation for new Recipes.
-5. **[Utility]** Print Recipes: High-fidelity print/PDF view for production cards.
+Candidates for next sprint (to be brainstormed):
+- Dashboard widgets / quick stats
+- Notification system (low stock alerts)
+- Batch history timeline view
+- Customer portal / order tracking
+- Mobile PWA improvements
 
 ---
 
@@ -68,10 +80,27 @@
 
 **Git root:** `/home/nickj/Documents/Soapmaker_App/SoapManager/`
 **Frontend root:** `web/frontend/src/`
-**Current Head:** `b2ab998` (Sprint 8: Interactive Lot Numbers)
+**Current Head:** `b57fef9` (Sprint 9: Print recipe cards from Recipes page)
 
 ---
 
 ## Manual Actions Required
 
-None.
+### Run this SQL in Supabase SQL Editor (ezkqfuxzcbtywtfubmon)
+
+```sql
+CREATE TABLE IF NOT EXISTS formulations (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE,
+  name text NOT NULL,
+  description text,
+  oils jsonb NOT NULL DEFAULT '[]',
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now()
+);
+ALTER TABLE formulations ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users manage own formulations" ON formulations
+  FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+```
+
+This creates the `formulations` table required by the Formulations Library and Save/Load features.

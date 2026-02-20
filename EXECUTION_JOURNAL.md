@@ -1,5 +1,45 @@
 # EXECUTION JOURNAL: SOAPBUDDY_AUTONOMOUS_REMEDIATION
 
+## 2026-02-19 - Sprint 9: Formula Intelligence & UX Polish
+
+### Sprint 9 Summary
+Model: Claude Haiku 4.5 | All 5 items complete | 5 commits pushed to `main`
+
+**Task 1 — Calculator → Formula Designer Rebrand** (`a5057ab`)
+- Renamed `Calculator.jsx` → `FormulaDesigner.jsx`, updated export name
+- Route changed `/calculator` → `/formula-designer` with backward-compat `<Navigate>` redirect
+- Print sub-route updated: `calculator/print` → `formula-designer/print`
+- Sidebar label: "Calculator" → "Formula Designer"
+
+**Task 2 — Formulations Library Page + API** (`b9d5843`)
+- Created `web/frontend/src/pages/Formulations.jsx` — table view with search, edit, delete
+- Added `getFormulations`, `getFormulation`, `createFormulation`, `updateFormulation`, `deleteFormulation` to `api/client.js`
+- Added `/formulations` route and sidebar nav entry (FlaskConical icon)
+- Load button: passes formulation via sessionStorage → navigates to Formula Designer
+- Recipe button: navigates to `/recipes?from_formula=<id>`
+
+**Task 3 — Save/Load Formulas in Formula Designer** (`4ddd23a`)
+- Wired existing stub Save button → opens Save Formulation modal (name + description)
+- Added Load button to toolbar → opens picker modal listing all saved formulations
+- sessionStorage-based load: consumed on mount, removed immediately after use
+- Only oil percentages stored (weights recalculated from current `total_oil_weight`)
+
+**Task 4 — Formula Templates** (`51f6025`)
+- Recipes.jsx reads `?from_formula=<id>` on mount
+- Fetches formulation, maps oils to recipe ingredient format, opens recipe modal pre-filled
+- Name pre-filled as `"<formulation name> Soap"`, description from formulation
+- Also added `Printer` icon import for Task 5
+
+**Task 5 — Print Recipe Cards** (`b57fef9`)
+- Added `handlePrintRecipe(recipe)` to Recipes.jsx — serializes recipe to sessionStorage
+- Print button added to expanded recipe cards (near Make Batch / Edit / Delete)
+- `PrintRecipe.jsx` updated to dual-mode: if `recipeData.recipe` key present → recipe layout; else → calculator layout (backward compat)
+- Recipe layout: name, date, settings table, ingredients table, notes section
+
+**Manual Action Required:** Run `formulations` table SQL in Supabase SQL editor (see HANDOFF.md).
+
+---
+
 ## 2026-02-07T20:30:00-06:00 - Initialization
 - Started the SoapBuddy Autonomous Remediation mission.
 - Created `EXECUTION_JOURNAL.md` to maintain a persistent history of changes.
@@ -347,3 +387,30 @@ Sprint 7 was a **stabilization sprint** addressing 4 critical issues from Sprint
 - 100% task completion rate
 
 ---
+
+## 2026-02-18T22:15:00-06:00 - Sprint 8 Exploration & Inventory Testing
+- **Production Testing**:
+    - Verified that Batch Completion (Planned -> Complete) works but lacks yield adjustment.
+    - Yield adjustment *does* exist in the "Move to Inventory" flow (Inventory tab).
+    - **BUG**: Yield adjustments (e.g., 15 -> 10) are correctly recorded in Inventory but **fail to sync** to the Recipe's "In Stock" display.
+- **Inventory Testing**:
+    - Confirmed no manual "Adjust/Cycle Count" feature exists for ingredients or finished goods.
+    - Verified that inventory moves and yield adjustments persist through page reloads.
+- **Traceability Testing**:
+    - Lot Number links in the production table are currently non-functional text.
+    - Traceability detail view for completed batches showed "No ingredient data available," indicating a probable data gap in the `complete_batch` or `start_batch` logic for specific recipes.
+- **Sprint 8 Priority Drafted**:
+    1. Fix Recipe Stock Sync.
+    2. Integrated Batch Completion Yield field.
+    3. Manual Inventory Adjustment feature.
+    4. Traceability data audit.
+
+---
+
+## 2026-02-18T22:45:00-06:00 - Sprint 9 Planning (Formula Intelligence)
+- **Goal**: Elevate the Calculator into a core "Formula Designer" system.
+- **Key Requirements**:
+    1. Rebrand Calculator ➜ Formula Designer.
+    2. Persist Formulas to a new "Formulations" library.
+    3. Cross-functional integration: Formulas as templates for Recipes.
+    4. Print utility for professional recipe cards.
