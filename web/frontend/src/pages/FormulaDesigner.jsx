@@ -20,7 +20,7 @@ import {
     X,
     BookOpen
 } from 'lucide-react';
-import { getIngredients, calculateLye } from '../api/client';
+import { getIngredients, calculateLye, getFormulations, createFormulation } from '../api/client';
 import { OIL_LIBRARY } from '../data/minimizedOilLibrary';
 
 export default function FormulaDesigner() {
@@ -44,6 +44,25 @@ export default function FormulaDesigner() {
 
     useEffect(() => {
         loadIngredients();
+    }, []);
+
+    useEffect(() => {
+        const stored = sessionStorage.getItem('load_formulation');
+        if (stored) {
+            try {
+                const formulation = JSON.parse(stored);
+                sessionStorage.removeItem('load_formulation');
+                const oils = (formulation.oils || []).map(oil => ({
+                    ingredient_id: oil.ingredient_id,
+                    name: oil.name,
+                    percentage: oil.percentage,
+                    weight: (oil.percentage / 100) * settings.total_oil_weight
+                }));
+                setRecipeOils(oils);
+            } catch (err) {
+                console.error('Failed to load formulation:', err);
+            }
+        }
     }, []);
 
     async function loadIngredients() {
@@ -157,6 +176,73 @@ export default function FormulaDesigner() {
         window.open('/formula-designer/print', '_blank', 'width=1000,height=800');
     }
 
+    async function loadFormulationsForPicker() {
+        try {
+            const data = await getFormulations();
+            setFormulations(data);
+        } catch (err) {
+            console.error('Failed to load formulations:', err);
+        }
+    }
+
+    function openSaveModal() {
+        setSaveFormData({ name: '', description: '' });
+        setIsSaveModalOpen(true);
+    }
+
+    function closeSaveModal() {
+        setIsSaveModalOpen(false);
+    }
+
+    async function handleSaveFormula(e) {
+        e.preventDefault();
+        if (!saveFormData.name.trim()) return;
+        if (recipeOils.length === 0) {
+            alert('Add at least one oil before saving a formulation.');
+            return;
+        }
+        try {
+            setIsSavingFormula(true);
+            const oils = recipeOils.map(o => ({
+                ingredient_id: o.ingredient_id,
+                name: o.name,
+                percentage: o.percentage
+            }));
+            await createFormulation({
+                name: saveFormData.name.trim(),
+                description: saveFormData.description.trim(),
+                oils
+            });
+            closeSaveModal();
+            alert(`Formulation "${saveFormData.name}" saved! View it in the Formulations Library.`);
+        } catch (err) {
+            console.error('Failed to save formulation:', err);
+            alert('Failed to save: ' + err.message);
+        } finally {
+            setIsSavingFormula(false);
+        }
+    }
+
+    async function openLoadModal() {
+        await loadFormulationsForPicker();
+        setIsLoadModalOpen(true);
+    }
+
+    function closeLoadModal() {
+        setIsLoadModalOpen(false);
+    }
+
+    function handleLoadFormulation(formulation) {
+        const oils = (formulation.oils || []).map(oil => ({
+            ingredient_id: oil.ingredient_id,
+            name: oil.name,
+            percentage: oil.percentage,
+            weight: (oil.percentage / 100) * settings.total_oil_weight
+        }));
+        setRecipeOils(oils);
+        closeLoadModal();
+    }
+
     const totalPercentage = recipeOils.reduce((sum, o) => sum + (o.percentage || 0), 0);
     const totalWeight = recipeOils.reduce((sum, o) => sum + (o.weight || 0), 0);
 
@@ -171,6 +257,11 @@ export default function FormulaDesigner() {
     };
 
     const [showRecipeModal, setShowRecipeModal] = useState(false);
+    const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
+    const [isLoadModalOpen, setIsLoadModalOpen] = useState(false);
+    const [formulations, setFormulations] = useState([]);
+    const [saveFormData, setSaveFormData] = useState({ name: '', description: '' });
+    const [isSavingFormula, setIsSavingFormula] = useState(false);
 
     return (
         <div className="calculator-container">
@@ -191,6 +282,9 @@ export default function FormulaDesigner() {
                             <BookOpen size={16} /> <span className="hide-on-mobile">View</span>
                         </button>
                     )}
+                    <button className="btn btn-secondary" onClick={openLoadModal}>
+                        <BookOpen size={16} /> <span className="hide-on-mobile">Load</span>
+                    </button>
                     <button className="btn btn-primary" onClick={handleCalculate} disabled={calculating}>
                         <Zap size={16} /> {calculating ? '...' : 'Calculate'}
                     </button>
@@ -487,7 +581,7 @@ export default function FormulaDesigner() {
                                 <button className="btn btn-secondary" style={{ padding: '0.5rem', fontSize: '0.75rem', flex: 1 }} onClick={handlePrint}>
                                     <Printer size={14} /> Print
                                 </button>
-                                <button className="btn btn-secondary" style={{ padding: '0.5rem', fontSize: '0.75rem', flex: 1 }}>
+                                <button className="btn btn-secondary" style={{ padding: '0.5rem', fontSize: '0.75rem', flex: 1 }} onClick={openSaveModal}>
                                     <Download size={14} /> Save
                                 </button>
                             </div>
@@ -559,6 +653,92 @@ export default function FormulaDesigner() {
                                 <Printer size={16} /> Print View
                             </button>
                             <button className="btn btn-primary" onClick={() => setShowRecipeModal(false)}>Close</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Save Formulation Modal */}
+            {isSaveModalOpen && (
+                <div className="modal-overlay" onClick={closeSaveModal}>
+                    <div className="modal" onClick={e => e.stopPropagation()}>
+                        <div className="modal-header">
+                            <h2 className="modal-title">Save Formulation</h2>
+                            <button className="btn-icon" onClick={closeSaveModal}><X size={18} /></button>
+                        </div>
+                        <form onSubmit={handleSaveFormula}>
+                            <div className="modal-body">
+                                <p style={{ color: 'var(--text-muted)', marginBottom: 'var(--spacing-md)', fontSize: '0.875rem' }}>
+                                    Saving {recipeOils.length} oil{recipeOils.length !== 1 ? 's' : ''} as a reusable formulation (percentages only, not weights).
+                                </p>
+                                <div className="form-group">
+                                    <label className="form-label">Formulation Name *</label>
+                                    <input
+                                        type="text"
+                                        className="form-input"
+                                        placeholder="e.g. Classic Bastille, Summer Citrus Blend..."
+                                        value={saveFormData.name}
+                                        onChange={e => setSaveFormData(prev => ({ ...prev, name: e.target.value }))}
+                                        required
+                                        autoFocus
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label className="form-label">Description (optional)</label>
+                                    <textarea
+                                        className="form-input"
+                                        rows={2}
+                                        placeholder="Notes about this formulation..."
+                                        value={saveFormData.description}
+                                        onChange={e => setSaveFormData(prev => ({ ...prev, description: e.target.value }))}
+                                    />
+                                </div>
+                            </div>
+                            <div className="modal-footer">
+                                <button type="button" className="btn btn-secondary" onClick={closeSaveModal}>Cancel</button>
+                                <button type="submit" className="btn btn-primary" disabled={isSavingFormula}>
+                                    {isSavingFormula ? 'Saving...' : 'Save Formulation'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Load Formulation Modal */}
+            {isLoadModalOpen && (
+                <div className="modal-overlay" onClick={closeLoadModal}>
+                    <div className="modal" style={{ maxWidth: '600px' }} onClick={e => e.stopPropagation()}>
+                        <div className="modal-header">
+                            <h2 className="modal-title">Load Formulation</h2>
+                            <button className="btn-icon" onClick={closeLoadModal}><X size={18} /></button>
+                        </div>
+                        <div className="modal-body">
+                            {formulations.length === 0 ? (
+                                <div className="empty-state" style={{ padding: 'var(--spacing-xl)' }}>
+                                    <p>No saved formulations yet. Save your current oils using the Save button.</p>
+                                </div>
+                            ) : (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-sm)' }}>
+                                    {formulations.map(f => (
+                                        <div
+                                            key={f.id}
+                                            className="card"
+                                            style={{ padding: 'var(--spacing-md)', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                                            onClick={() => handleLoadFormulation(f)}
+                                        >
+                                            <div>
+                                                <div style={{ fontWeight: 600 }}>{f.name}</div>
+                                                {f.description && <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{f.description}</div>}
+                                            </div>
+                                            <span className="badge badge-info">{(f.oils || []).length} oils</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                        <div className="modal-footer">
+                            <button className="btn btn-secondary" onClick={closeLoadModal}>Cancel</button>
                         </div>
                     </div>
                 </div>
