@@ -16,7 +16,7 @@ import { getProfiles, updateProfileTier } from '../api/client';
 import { useSubscription } from '../contexts/SubscriptionContext';
 
 export default function Admin() {
-    const { isAdmin, TIER_FEATURES } = useSubscription();
+    const { isAdmin, PLANS } = useSubscription();
     const [profiles, setProfiles] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
@@ -183,9 +183,9 @@ export default function Admin() {
                                                 onChange={(e) => handleTierChange(profile.id, e.target.value)}
                                                 disabled={updating === profile.id}
                                             >
-                                                {Object.keys(TIER_FEATURES).map(tier => (
-                                                    <option key={tier} value={tier}>
-                                                        {TIER_FEATURES[tier].label}
+                                                {Object.values(PLANS).map(plan => (
+                                                    <option key={plan.id} value={plan.id}>
+                                                        {plan.name}
                                                     </option>
                                                 ))}
                                             </select>

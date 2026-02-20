@@ -30,7 +30,7 @@ export const PLANS = {
     maker: {
         id: 'maker',
         name: 'Maker',
-        price: '$12',
+        price: '$6',
         period: '/mo',
         description: 'For growing craft businesses who need more control.',
         priceId: import.meta.env.VITE_STRIPE_PRICE_MAKER,
@@ -50,7 +50,7 @@ export const PLANS = {
     manufacturer: {
         id: 'manufacturer',
         name: 'Manufacturer',
-        price: '$29',
+        price: '$19',
         period: '/mo',
         description: 'Advanced features for professional soap manufacturing.',
         priceId: import.meta.env.VITE_STRIPE_PRICE_MANUFACTURER,
