@@ -1,4 +1,4 @@
-import { Routes, Route } from 'react-router-dom'
+import { Routes, Route, Navigate } from 'react-router-dom'
 import Layout from './components/Layout'
 import TierGate from './components/TierGate'
 import { AuthProvider } from './contexts/AuthContext'
@@ -12,7 +12,7 @@ import Recipes from './pages/Recipes'
 import Production from './pages/Production'
 import Inventory from './pages/Inventory'
 
-import Calculator from './pages/Calculator'
+import FormulaDesigner from './pages/FormulaDesigner'
 import Suppliers from './pages/Suppliers'
 import SupplyOrders from './pages/SupplyOrders'
 import Customers from './pages/Customers'
@@ -51,7 +51,8 @@ function App() {
               <Route path="inventory" element={
                 <TierGate featureId="inventory"><Inventory /></TierGate>
               } />
-              <Route path="calculator" element={<Calculator />} />
+              <Route path="formula-designer" element={<FormulaDesigner />} />
+              <Route path="calculator" element={<Navigate to="/formula-designer" replace />} />
               <Route path="suppliers" element={
                 <TierGate featureId="supplyChain"><Suppliers /></TierGate>
               } />
@@ -82,7 +83,7 @@ function App() {
               <Route path="molds" element={
                 <TierGate featureId="production"><MoldManager /></TierGate>
               } />
-              <Route path="calculator/print" element={<PrintRecipe />} />
+              <Route path="formula-designer/print" element={<PrintRecipe />} />
             </Route>
           </Routes>
         </SettingsProvider>

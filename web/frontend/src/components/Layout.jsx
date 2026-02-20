@@ -48,7 +48,7 @@ export default function Layout() {
     const allNavItems = [
         { path: '/', icon: LayoutDashboard, label: 'Dashboard', alwaysVisible: true },
         { path: '/ingredients', icon: FlaskConical, label: 'Ingredients' },
-        { path: '/calculator', icon: Calculator, label: 'Calculator' },
+        { path: '/formula-designer', icon: Calculator, label: 'Formula Designer' },
         { path: '/recipes', icon: BookOpen, label: 'Recipes' },
         { path: '/production', icon: Factory, label: 'Production', featureId: 'production' },
         { path: '/inventory', icon: Warehouse, label: 'Inventory', featureId: 'inventory' },
