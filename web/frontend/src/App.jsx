@@ -26,6 +26,7 @@ import PrintRecipe from './pages/PrintRecipe'
 import ShoppingList from './pages/ShoppingList'
 import MoldManager from './pages/MoldManager'
 import LabelStudio from './components/LabelStudio'
+import Formulations from './pages/Formulations'
 
 import { SettingsProvider } from './contexts/SettingsContext'
 
@@ -52,6 +53,7 @@ function App() {
                 <TierGate featureId="inventory"><Inventory /></TierGate>
               } />
               <Route path="formula-designer" element={<FormulaDesigner />} />
+              <Route path="formulations" element={<Formulations />} />
               <Route path="calculator" element={<Navigate to="/formula-designer" replace />} />
               <Route path="suppliers" element={
                 <TierGate featureId="supplyChain"><Suppliers /></TierGate>

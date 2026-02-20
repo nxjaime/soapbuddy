@@ -1485,3 +1485,54 @@ export const bulkInsertCustomers = async (items) => {
     if (error) handleError(error, 'bulk insert customers');
     return data;
 };
+
+// ============ Formulations ============
+
+export async function getFormulations() {
+    const { data, error } = await supabase
+        .from('formulations')
+        .select('*')
+        .order('created_at', { ascending: false });
+    if (error) throw error;
+    return data;
+}
+
+export async function getFormulation(id) {
+    const { data, error } = await supabase
+        .from('formulations')
+        .select('*')
+        .eq('id', id)
+        .single();
+    if (error) throw error;
+    return data;
+}
+
+export async function createFormulation(formulation) {
+    const { data: { user } } = await supabase.auth.getUser();
+    const { data, error } = await supabase
+        .from('formulations')
+        .insert({ ...formulation, user_id: user.id })
+        .select()
+        .single();
+    if (error) throw error;
+    return data;
+}
+
+export async function updateFormulation(id, updates) {
+    const { data, error } = await supabase
+        .from('formulations')
+        .update({ ...updates, updated_at: new Date().toISOString() })
+        .eq('id', id)
+        .select()
+        .single();
+    if (error) throw error;
+    return data;
+}
+
+export async function deleteFormulation(id) {
+    const { error } = await supabase
+        .from('formulations')
+        .delete()
+        .eq('id', id);
+    if (error) throw error;
+}

@@ -49,6 +49,7 @@ export default function Layout() {
         { path: '/', icon: LayoutDashboard, label: 'Dashboard', alwaysVisible: true },
         { path: '/ingredients', icon: FlaskConical, label: 'Ingredients' },
         { path: '/formula-designer', icon: Calculator, label: 'Formula Designer' },
+        { path: '/formulations', icon: FlaskConical, label: 'Formulations' },
         { path: '/recipes', icon: BookOpen, label: 'Recipes' },
         { path: '/production', icon: Factory, label: 'Production', featureId: 'production' },
         { path: '/inventory', icon: Warehouse, label: 'Inventory', featureId: 'inventory' },
