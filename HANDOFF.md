@@ -30,10 +30,10 @@
 
 ## Known Issues (To Be Addressed - Sprint 11+)
 
-### Sprint 11. Recipes 38-44 Missing Ingredients (Data Issue)
+### ✅ Sprint 11. Recipes 38-44 Missing Ingredients (Data Issue)
 - **Symptoms**: Bulk-created recipes (ID 38-44, e.g., "Hemp & Olive") have 0 ingredients defined.
 - **Impact**: Creating batches for these recipes works but triggers no inventory drawdown.
-- **Status**: Identified; Sprint 11+ backlog.
+- **Status**: Resolved (2026-02-21); Missing ingredients were successfully inserted into the `recipe_ingredients` table.
 
 ---
 
