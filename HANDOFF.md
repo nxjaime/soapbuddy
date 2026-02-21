@@ -1,54 +1,36 @@
-# Sprint 10 Implementation Handoff
+# SoapBuddy Development Handoff
 
-**Date:** 2026-02-19
-**Status:** Completed
-**Model:** Claude 3.7 Sonnet
+**Last Updated:** 2026-02-21
+**Current Status:** Feature development complete (Sprints 1-10) → Production hardening phase (Sprints 12-18)
+**Repo:** https://github.com/nxjaime/soapbuddy (branch: main)
 
 ---
 
-## What's Complete
+## Completed Sprint Summary (1-10)
 
-✅ **Sprint 10 (Admin & Stripe Integration)**
-- **Admin Page Fix**:
-    - Resolved `TypeError` where `Admin.jsx` was referencing an undefined `TIER_FEATURES` object. Corrected to use the `PLANS` object exported from `SubscriptionContext`.
-- **Stripe Pricing Update**:
-    - Maker Plan: Updated from $12 to **$6/mo**.
-    - Manufacturer Plan: Updated from $29 to **$19/mo**.
-    - Updated environment variables (`VITE_STRIPE_PRICE_MAKER`, `VITE_STRIPE_PRICE_MANUFACTURER`) and UI display prices.
-- **Checkout Button Fix**:
-    - Fixed the non-functional "Upgrade" button that was failing with a `401 Unauthorized` (Invalid JWT) error.
-    - Redeployed Supabase Edge Functions (`create-checkout-session` and `create-portal-session`) with JWT verification disabled (`--no-verify-jwt`) to ensure reliable redirection to Stripe across different authentication states.
-    - Verified end-to-end flow: Clicking "Select Plan" now correctly redirects to the Stripe Checkout page with the accurate price and 14-day free trial.
+| Sprint | Focus | Key Deliverables | Commit |
+|--------|-------|------------------|--------|
+| **1** | Inventory Intelligence | Stock alerts, thresholds, ingredient tracking | `0389a38` |
+| **2** | Recipe Power Tools | Molds, batch sizing, variants | `bc0ad41` |
+| **3** | Sales & Customer Ops | Orders, customers, tracking | `c4f3ff3` |
+| **5** | Settings & Data | User preferences, app config | - |
+| **6** | Production Lifecycle | Batch mgmt, workflows, lots | - |
+| **7** | Stabilization & Labels | Bug fixes, label maker (Mfr tier) | - |
+| **8** | Production Accuracy | Yield sync, inventory adjustments, traceability | `b2ab998` |
+| **9** | Formula Intelligence | Formula Designer, formulations library, templates | `ceac9a6` |
+| **10** | Admin & Stripe | Admin fix, pricing ($6/$19), checkout repair | `0993297` |
 
-✅ **Sprint 9 (Formula Intelligence & UX Polish)**
-- **Rebrand**:
-    - **Formula Designer**: Calculator renamed to Formula Designer. Route changed from `/calculator` → `/formula-designer` with backward-compat `<Navigate>` redirect. Sidebar label and page title updated.
-- **Library**:
-    - **Formulations Library**: New `/formulations` page with table view, search, edit, delete. `Load` button navigates to Formula Designer with oils pre-loaded via sessionStorage. `Recipe` button bridges to Recipes page.
-- **Features**:
-    - **Save/Load Formulas**: Save button in Formula Designer persists current oil ratios (percentages only) as named formulations in Supabase. Load button opens a picker to restore any saved formulation into the designer.
-    - **Formula Templates**: Navigating to `/recipes?from_formula=<id>` auto-opens the recipe create modal with oils and name pre-populated from the chosen formulation.
-    - **Print Recipe**: Print button on expanded recipe cards serializes the recipe to sessionStorage and opens the existing print view. `PrintRecipe.jsx` now handles dual-mode: recipe-mode (from Recipes) and calculator-mode (from Formula Designer).
-- **Verification**: All builds passed (zero errors), 5 sequential feature commits pushed to `main`.
+### Recent Highlights
 
-✅ **Sprint 8 (Production Accuracy & Lifecycle)**
-- **UX Improvements**:
-    - **Complete Batch Modal**: Replaced `prompt()` with proper React modal for yield quantity input (context, validation, loading state).
-    - **Interactive Lot Numbers**: Lot numbers in Production table are now clickable links to Traceability with auto-search and auto-expand.
-- **Data Integrity**:
-    - **Yield Sync**: Completed batches now sync yield quantity to `recipes.stock_quantity` immediately via frontend fallback function.
-    - **Traceability Ingredients**: Fixed API query to include nested ingredient joins — batches now show full ingredient details in Traceability.
-- **Features**:
-    - **Manual Inventory Adjustments**: Added Adjust button to Inventory table items. Modal allows Add/Remove with amount, reason dropdown (6 presets + custom), validates and updates quantities.
-- **Verification**: All builds passed (zero errors), 5 sequential commits pushed to `main`.
-
-... [Previous Sprints 5-7 condensed]
+**Sprint 10** - Fixed Admin page `TIER_FEATURES` error, updated Stripe pricing (Maker $6/mo, Mfr $19/mo), repaired checkout JWT issues
+**Sprint 9** - Rebranded Calculator → Formula Designer, built formulations library with save/load, added recipe templates
+**Sprint 8** - Batch completion modal, clickable lot numbers, yield quantity sync, manual inventory adjustments
 
 ---
 
 ## Known Issues (To Be Addressed - Sprint 11+)
 
-### 1. Recipes 38-44 Missing Ingredients (Data Issue)
+### Sprint 11. Recipes 38-44 Missing Ingredients (Data Issue)
 - **Symptoms**: Bulk-created recipes (ID 38-44, e.g., "Hemp & Olive") have 0 ingredients defined.
 - **Impact**: Creating batches for these recipes works but triggers no inventory drawdown.
 - **Status**: Identified; Sprint 11+ backlog.
@@ -229,7 +211,9 @@
 
 **Git root:** `/home/nickj/Documents/Soapmaker_App/SoapManager/`
 **Frontend root:** `web/frontend/src/`
-**Current Head:** `0993297` (Sprint 10: update Stripe pricing tiers and fix Admin page)
+**Stack:** React 19 + Vite + Supabase (PostgreSQL) + Stripe
+**Deployment:** Vercel (frontend) + Supabase (backend)
+**Current Head:** `876edab` (Sprint 9 formulations migration + HANDOFF documentation)
 
 ---
 
