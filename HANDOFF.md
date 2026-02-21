@@ -235,21 +235,19 @@
 
 ## Manual Actions Required
 
-### Run this SQL in Supabase SQL Editor (ezkqfuxzcbtywtfubmon)
+### ✅ Sprint 9 Formulations Table - COMPLETED (2026-02-21)
 
-```sql
-CREATE TABLE IF NOT EXISTS formulations (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE,
-  name text NOT NULL,
-  description text,
-  oils jsonb NOT NULL DEFAULT '[]',
-  created_at timestamptz DEFAULT now(),
-  updated_at timestamptz DEFAULT now()
-);
-ALTER TABLE formulations ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Users manage own formulations" ON formulations
-  FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
-```
+**Migration file**: `supabase/sprint9_formulations.sql`
+**Status**: Applied to production database
+**Verified**: Table exists and RLS policy is active
 
-This creates the `formulations` table required by the Formulations Library and Save/Load features.
+The `formulations` table is now ready for use by:
+- Formula Designer Save/Load functionality
+- Formulations Library page (`/formulations`)
+- Recipe template creation from saved formulas
+
+---
+
+### Migration Instructions
+
+For future migrations, see: `supabase/MIGRATION_INSTRUCTIONS.md`
