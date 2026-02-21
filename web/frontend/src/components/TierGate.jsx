@@ -17,7 +17,7 @@ import { useSubscription } from '../contexts/SubscriptionContext';
  *   </TierGate>
  */
 export default function TierGate({ children, requiredTier, featureId }) {
-    const { meetsMinTier, hasFeature, subscribe, currentPlan } = useSubscription();
+    const { meetsMinTier, hasFeature } = useSubscription();
     const navigate = useNavigate();
 
     // Determine if access is allowed

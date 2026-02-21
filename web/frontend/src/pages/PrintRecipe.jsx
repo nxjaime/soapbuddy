@@ -1,15 +1,11 @@
-import { useEffect, useState } from 'react';
-import { Printer, Download, ChevronLeft } from 'lucide-react';
+import { useState } from 'react';
+import { Printer, ChevronLeft } from 'lucide-react';
 
 export default function PrintRecipe() {
-    const [recipeData, setRecipeData] = useState(null);
-
-    useEffect(() => {
+    const [recipeData] = useState(() => {
         const storedData = sessionStorage.getItem('print_recipe_data');
-        if (storedData) {
-            setRecipeData(JSON.parse(storedData));
-        }
-    }, []);
+        return storedData ? JSON.parse(storedData) : null;
+    });
 
     if (!recipeData) {
         return (

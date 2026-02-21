@@ -16,7 +16,7 @@ import { getProfiles, updateProfileTier } from '../api/client';
 import { useSubscription } from '../contexts/SubscriptionContext';
 
 export default function Admin() {
-    const { isAdmin, PLANS } = useSubscription();
+    const { isAdmin, allPlans: PLANS } = useSubscription();
     const [profiles, setProfiles] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');

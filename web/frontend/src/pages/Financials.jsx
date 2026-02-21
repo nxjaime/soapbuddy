@@ -23,7 +23,7 @@ import {
 import { useSubscription } from '../contexts/SubscriptionContext';
 
 export default function Financials() {
-    const { hasFeature, tier } = useSubscription();
+    const { hasFeature } = useSubscription();
     const canSeeInsights = hasFeature('financialInsights');
     const [loading, setLoading] = useState(true);
     const [salesOrders, setSalesOrders] = useState([]);

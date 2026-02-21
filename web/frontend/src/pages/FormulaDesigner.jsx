@@ -40,7 +40,6 @@ export default function FormulaDesigner() {
     });
     const [results, setResults] = useState(null);
     const [calculating, setCalculating] = useState(false);
-    const [activeTab, setActiveTab] = useState('recipe'); // recipe, qualities, fatty-acids
 
     useEffect(() => {
         loadIngredients();

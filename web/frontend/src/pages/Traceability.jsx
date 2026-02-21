@@ -27,8 +27,54 @@ export default function Traceability() {
     const [search, setSearch] = useState('');
     const [expandedBatch, setExpandedBatch] = useState(null);
 
+    const hasAccess = meetsMinTier('manufacturer');
+
+    // Filter batches by lot number search
+    const filteredBatches = batches.filter(batch =>
+        batch.lot_number?.toLowerCase().includes(search.toLowerCase()) ||
+        batch.recipe?.name?.toLowerCase().includes(search.toLowerCase())
+    );
+
+    useEffect(() => {
+        if (!hasAccess) return;
+        loadData();
+    }, [hasAccess]);
+
+    useEffect(() => {
+        if (!hasAccess) return;
+        const params = new URLSearchParams(window.location.search);
+        const lotParam = params.get('lot');
+        if (lotParam && filteredBatches.length > 0) {
+            const matchingBatch = filteredBatches.find(b => b.lot_number === lotParam);
+            if (matchingBatch) {
+                setSearch(lotParam);
+                setExpandedBatch(matchingBatch.id);
+                setTimeout(() => {
+                    const element = document.querySelector(`[data-lot="${lotParam}"]`);
+                    if (element) element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }, 100);
+            }
+        }
+    }, [filteredBatches, hasAccess]);
+
+    async function loadData() {
+        try {
+            setLoading(true);
+            const [batchData, supplyData] = await Promise.all([
+                getBatches(),
+                getSupplyOrders()
+            ]);
+            setBatches(batchData);
+            setSupplyOrders(supplyData);
+        } catch (err) {
+            console.error('Failed to load data:', err);
+        } finally {
+            setLoading(false);
+        }
+    }
+
     // Gate: only manufacturer tier can access
-    if (!meetsMinTier('manufacturer')) {
+    if (!hasAccess) {
         return (
             <div>
                 <div className="page-header">
@@ -51,50 +97,6 @@ export default function Traceability() {
             </div>
         );
     }
-
-    useEffect(() => {
-        loadData();
-    }, []);
-
-    useEffect(() => {
-        const params = new URLSearchParams(window.location.search);
-        const lotParam = params.get('lot');
-        if (lotParam && filteredBatches.length > 0) {
-            // Find the batch with this lot number
-            const matchingBatch = filteredBatches.find(b => b.lot_number === lotParam);
-            if (matchingBatch) {
-                setSearch(lotParam); // Auto-populate search
-                setExpandedBatch(matchingBatch.id); // Auto-expand batch
-                // Scroll to the batch (optional, nice-to-have)
-                setTimeout(() => {
-                    const element = document.querySelector(`[data-lot="${lotParam}"]`);
-                    if (element) element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                }, 100);
-            }
-        }
-    }, [filteredBatches]);
-
-    async function loadData() {
-        try {
-            setLoading(true);
-            const [batchData, supplyData] = await Promise.all([
-                getBatches(),
-                getSupplyOrders()
-            ]);
-            setBatches(batchData);
-            setSupplyOrders(supplyData);
-        } catch (err) {
-            console.error('Failed to load data:', err);
-        } finally {
-            setLoading(false);
-        }
-    }
-
-    // Filter batches by lot number search
-    const filteredBatches = batches.filter(batch =>
-        batch.lot_number.toLowerCase().includes(search.toLowerCase()) ||
-        batch.recipe?.name.toLowerCase().includes(search.toLowerCase())
-    );
 
     const toggleExpand = (id) => {
         setExpandedBatch(expandedBatch === id ? null : id);

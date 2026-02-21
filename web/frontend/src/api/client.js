@@ -935,32 +935,17 @@ export const getDashboardStats = async () => {
         { count: ingredientCount },
         { count: recipeCount },
         { count: batchCount },
-        { data: activeBatches }
+        { data: activeBatches },
+        { count: customerCount },
+        { count: salesCount },
+        { count: supplyCount }
     ] = await Promise.all([
         supabase.from('ingredients').select('*', { count: 'exact', head: true }),
         supabase.from('recipes').select('*', { count: 'exact', head: true }),
         supabase.from('production_batches').select('*', { count: 'exact', head: true }),
         supabase.from('production_batches')
             .select('id, status')
-            .in('status', ['Planned', 'In Progress', 'Curing'])
-    ]);
-
-    return {
-        total_ingredients: ingredientCount || 0,
-        total_recipes: recipeCount || 0,
-        total_batches: batchCount || 0,
-        active_batches: activeBatches?.length || 0,
-        total_customers: 0,
-        total_sales: 0,
-        total_supplies: 0
-    };
-
-    // Add remaining counts
-    const [
-        { count: customerCount },
-        { count: salesCount },
-        { count: supplyCount }
-    ] = await Promise.all([
+            .in('status', ['Planned', 'In Progress', 'Curing']),
         supabase.from('customers').select('*', { count: 'exact', head: true }),
         supabase.from('sales_orders').select('*', { count: 'exact', head: true }),
         supabase.from('supply_orders').select('*', { count: 'exact', head: true })
@@ -1219,7 +1204,7 @@ export const transferInventory = async (itemId, toLocationId, transferQty) => {
     }
 };
 
-export async function adjustInventoryItem(itemId, quantityDelta, reason) {
+export async function adjustInventoryItem(itemId, quantityDelta, _reason) {
     // Fetch current inventory item to calculate new quantity
     const { data: item, error: fetchError } = await supabase
         .from('inventory_items')

@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
+import { useEffect, useState, useRef, useMemo } from 'react';
 import {
     BookOpen,
     Plus,
@@ -19,7 +19,6 @@ import {
 import QualityChart from '../components/QualityChart';
 import {
     getRecipes,
-    getRecipe,
     getIngredients,
     createRecipe,
     updateRecipe,
@@ -164,24 +163,6 @@ export default function Recipes() {
             setRecipes(data);
         } catch (err) {
             console.error('Failed to load recipes:', err);
-        }
-    }
-
-    async function loadIngredients() {
-        try {
-            const data = await getIngredients();
-            setIngredients(data);
-        } catch (err) {
-            console.error('Failed to load ingredients:', err);
-        }
-    }
-
-    async function loadMolds() {
-        try {
-            const data = await getMolds();
-            setMolds(data || []);
-        } catch (err) {
-            console.error('Failed to load molds:', err);
         }
     }
 

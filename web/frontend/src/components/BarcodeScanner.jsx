@@ -1,11 +1,11 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Html5QrcodeScanner, Html5QrcodeSupportedFormats } from 'html5-qrcode';
 import { Camera, X, Package, Loader2, Check } from 'lucide-react';
 
 export default function BarcodeScanner({ onScan, onClose }) {
     const [lookupLoading, setLookupLoading] = useState(false);
     const [lookupResult, setLookupResult] = useState(null);
-    const scannerRef = useRef(null);
+
 
     useEffect(() => {
         const scanner = new Html5QrcodeScanner(
@@ -32,7 +32,7 @@ export default function BarcodeScanner({ onScan, onClose }) {
             handleBarcodeLookup(decodedText);
         }
 
-        function onScanFailure(error) {
+        function onScanFailure(_error) {
             // console.warn(`Code scan error = ${error}`);
         }
 
