@@ -79,6 +79,7 @@
 - ✅ Fixed 5 function search paths (`complete_batch`, `convert_weight`, `increment_stock`, `decrement_stock`, `update_updated_at`).
 - ✅ 8-check verification script (`verify_rls_policies.sql`) — all pass.
 - ✅ Supabase security linter: 0 RLS/function warnings remaining.
+- ✅ Admin page: user email display, action dropdown (View Details, Send Message, Change Plan, Copy ID, Grant/Revoke Admin, Delete User), confirmation modals, toast notifications, tier badges, admin avatars.
 - ⚠️ Leaked password protection disabled (Auth dashboard setting, not a code change).
 
 ### Sprint 15: Migration Automation
