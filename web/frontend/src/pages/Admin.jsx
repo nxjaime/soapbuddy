@@ -64,8 +64,7 @@ export default function Admin() {
     }
 
     const filteredProfiles = profiles.filter(p =>
-        (p.full_name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (p.business_name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (p.display_name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
         (p.id || '').toLowerCase().includes(searchTerm.toLowerCase())
     );
 
@@ -125,7 +124,6 @@ export default function Admin() {
                         <thead>
                             <tr>
                                 <th>User</th>
-                                <th>Business</th>
                                 <th>Plan Tier</th>
                                 <th>Joined</th>
                                 <th>ID</th>
@@ -136,14 +134,14 @@ export default function Admin() {
                             {loading ? (
                                 Array(5).fill(0).map((_, i) => (
                                     <tr key={i}>
-                                        <td colSpan="6" style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
+                                        <td colSpan="5" style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
                                             Loading users...
                                         </td>
                                     </tr>
                                 ))
                             ) : filteredProfiles.length === 0 ? (
                                 <tr>
-                                    <td colSpan="6" style={{ textAlign: 'center', padding: '3rem' }}>
+                                    <td colSpan="5" style={{ textAlign: 'center', padding: '3rem' }}>
                                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem', color: 'var(--text-muted)' }}>
                                             <Users size={48} opacity={0.3} />
                                             <p>No users found matching your search.</p>
@@ -166,15 +164,17 @@ export default function Admin() {
                                                     fontWeight: 'bold',
                                                     fontSize: '0.8rem'
                                                 }}>
-                                                    {(profile.full_name || 'U')[0].toUpperCase()}
+                                                    {(profile.display_name || 'U')[0].toUpperCase()}
                                                 </div>
                                                 <div>
-                                                    <div style={{ fontWeight: '600' }}>{profile.full_name || 'Anonymous User'}</div>
-                                                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{profile.email}</div>
+                                                    <div style={{ fontWeight: '600' }}>{profile.display_name || 'Unknown User'}</div>
+                                                    {profile.is_admin && (
+                                                        <div style={{ fontSize: '0.7rem', color: 'var(--color-primary-light)', fontWeight: '600' }}>Admin</div>
+                                                    )}
                                                 </div>
                                             </div>
                                         </td>
-                                        <td>{profile.business_name || '—'}</td>
+
                                         <td>
                                             <select
                                                 className="form-input"
