@@ -62,8 +62,9 @@
 - ✅ Return URL validation (prevent open redirects via `ALLOWED_ORIGINS`).
 - ✅ Frontend env validation (`src/lib/validateEnv.js`) with fail-fast for Supabase, warnings for Stripe.
 - ✅ Proper HTTP status codes (401/403/400/500 instead of generic 400).
+- ✅ Supabase Secrets verified and added via browser subagent.
 - ⬚ Negative billing-path tests (deferred to Sprint 16/17).
-- ⬚ Webhook deploy failed (Supabase internal error — retry needed).
+- ⚠️ Webhook deploy failed (Supabase internal error — retry needed via CLI).
 
 ### Sprint 14: Database Safety Baseline
 - Remove permissive RLS from canonical provisioning path.
